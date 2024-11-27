@@ -2,7 +2,6 @@ import { useState } from 'react';
 import reactLogo from './assets/react.svg';
 import { invoke } from '@tauri-apps/api/core';
 import './App.css';
-import { ModeToggle } from './components/mode-toggle';
 import { SidebarTrigger } from './components/ui/sidebar';
 import { Textarea } from './components/ui/textarea';
 
