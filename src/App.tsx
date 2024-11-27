@@ -16,13 +16,10 @@ function App() {
   }
 
   return (
-    <div className="h-full w-full shrink border border-red-600">
-      <div className="flex">
-        {/* header */}
-        <SidebarTrigger />
-      </div>
-      <div className="flex w-full justify-center">
-        <div className="w-full max-w-[600px] relative mx-8">
+    <div className="h-full w-full shrink flex flex-col item ">
+      <SidebarTrigger />
+      <div className="w-full h-full flex justify-center ">
+        <div className="w-full h-full max-w-[600px] relative mx-8 border-t ">
           <p className="absolute top-[-1.5rem] text-gray-500 font-thin left-0">
             filename
           </p>
