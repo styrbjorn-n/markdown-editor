@@ -1,29 +1,42 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use ::std::env;
-use std::fs;
+use std::{
+    fs::{self, File},
+    io::Write,
+    path::Path,
+};
+
+use utils::{get_notes_location, set_notes_location};
+mod utils;
 
 fn main() {
-    let working_path = env::current_dir()
+    let mut working_path = env::current_dir()
         .expect("could not get path")
         .into_os_string()
         .into_string()
         .unwrap();
+    working_path.truncate(working_path.len() - "src-tauri".len());
+    working_path.push_str("My Notes");
 
-    if working_path.contains("Documents") {
-        let docs_inde = working_path.find("Documents").unwrap();
-        let docs_path = &working_path[..=docs_inde + "Documents".len()];
+    if !Path::new(&working_path).exists() {
+        fs::create_dir(working_path.clone()).expect("Failed to create My Notes");
+        let mut first_file =
+            File::create(working_path + "/welcome.md").expect("Failed to create welcome file");
+        first_file
+            .write("hello world".as_bytes())
+            .expect("Failed to write to file");
+        let mut working_path = env::current_dir()
+            .expect("could not get path")
+            .into_os_string()
+            .into_string()
+            .unwrap();
 
-        let docs_files: Vec<String> = fs::read_dir(docs_path)
-            .unwrap()
-            .map(|e| e.unwrap().path().display().to_string())
-            .collect();
+        working_path.truncate(working_path.len() - "src-tauri".len());
+        let _ = set_notes_location(working_path);
+    }
 
-        let notes_path = docs_path.to_string() + "My Notes";
-        if !docs_files.contains(&notes_path) {
-            fs::create_dir(notes_path).expect("failed to create my notes");
-        }
-    };
+    println!("{}", get_notes_location());
 
     markdown_editor_lib::run()
 }
