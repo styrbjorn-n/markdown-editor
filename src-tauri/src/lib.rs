@@ -1,4 +1,7 @@
 use std::fs::File;
+
+use utils::get_notes_location;
+
 mod utils;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -10,6 +13,9 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn new_md() {
     // add file creation logic here
+    let new_note_loaction = get_notes_location();
+
+    File::create(new_note_loaction + "foo.md").expect("failed to create new note");
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
