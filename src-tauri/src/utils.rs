@@ -15,16 +15,32 @@ struct Settings {
     notes_loaction: String,
 }
 
-// todo split settings creation from setting notes location
-pub fn set_notes_location(new_loaction: String) -> std::io::Result<()> {
-    let mut notes_location = new_loaction;
-    notes_location.push_str("settings.json");
-    if !Path::new(&notes_location).exists() {
+pub fn create_settings() {
+    let mut settings_path = env::current_dir()
+        .expect("could not get path")
+        .into_os_string()
+        .into_string()
+        .unwrap();
+    settings_path.truncate(settings_path.len() - "src-tauri".len());
+    settings_path.push_str("settings.json");
+    if !Path::new(&settings_path).exists() {
         println!("creating settings file");
-        File::create(&notes_location).expect("failed to create settings file");
-    }
 
-    let new_settings = NewSettings {
+        File::create(&settings_path).expect("failed to create settings file");
+    }
+}
+
+pub fn set_notes_location(new_loaction: String) -> std::io::Result<()> {
+    let mut settings_path = env::current_dir()
+        .expect("could not get path")
+        .into_os_string()
+        .into_string()
+        .unwrap();
+    settings_path.truncate(settings_path.len() - "src-tauri".len());
+    settings_path.push_str("settings.json");
+    let notes_location = new_loaction;
+
+    let new_settings: NewSettings = NewSettings {
         notes_loaction: notes_location.clone(),
     };
 
@@ -40,7 +56,7 @@ pub fn set_notes_location(new_loaction: String) -> std::io::Result<()> {
         let mut file = OpenOptions::new()
             .write(true)
             .truncate(true)
-            .open(notes_location)?;
+            .open(settings_path)?;
 
         file.write_all(j.as_bytes())?;
     }
@@ -55,7 +71,7 @@ pub fn get_notes_location() -> String {
         .into_string()
         .unwrap();
     working_path.truncate(working_path.len() - "src-tauri".len());
-    working_path.push_str("/settings.json");
+    working_path.push_str("settings.json");
 
     let settings_data = fs::read_to_string(working_path).expect("Failed to read settings");
     let settings: Settings = match serde_json::from_str(&settings_data) {

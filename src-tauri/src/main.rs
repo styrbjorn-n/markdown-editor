@@ -7,7 +7,7 @@ use std::{
     path::Path,
 };
 
-use utils::{get_notes_location, set_notes_location};
+use utils::{create_settings, get_notes_location, set_notes_location};
 mod utils;
 
 fn main() {
@@ -26,14 +26,17 @@ fn main() {
         first_file
             .write("hello world".as_bytes())
             .expect("Failed to write to file");
-        let mut working_path = env::current_dir()
+        let working_path = env::current_dir()
             .expect("could not get path")
             .into_os_string()
             .into_string()
             .unwrap();
 
-        working_path.truncate(working_path.len() - "src-tauri".len());
-        let _ = set_notes_location(working_path);
+        let mut notes_path = working_path.clone();
+        notes_path.truncate(notes_path.len() - "src-tauri".len());
+        notes_path.push_str("My Notes");
+        create_settings();
+        let _ = set_notes_location(notes_path);
     }
 
     println!("{}", get_notes_location());
