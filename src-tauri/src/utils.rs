@@ -73,6 +73,8 @@ pub fn get_notes_location() -> String {
     working_path.truncate(working_path.len() - "src-tauri".len());
     working_path.push_str("settings.json");
 
+    println!("settings path {}", working_path);
+
     let settings_data = fs::read_to_string(working_path).expect("Failed to read settings");
     let settings: Settings = match serde_json::from_str(&settings_data) {
         Ok(v) => v,

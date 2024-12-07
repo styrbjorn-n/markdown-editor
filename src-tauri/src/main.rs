@@ -32,6 +32,7 @@ fn main() {
             .into_string()
             .unwrap();
         create_settings();
+
         let mut notes_path = working_path.clone();
         notes_path.truncate(notes_path.len() - "src-tauri".len());
         notes_path.push_str("My Notes/");
