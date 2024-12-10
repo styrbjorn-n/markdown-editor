@@ -4,6 +4,7 @@ use std::io::Write;
 use std::path::Path;
 use std::process::exit;
 use std::{env, fs};
+use tauri::Emitter;
 
 #[derive(Serialize)]
 struct NewSettings {
@@ -72,8 +73,6 @@ pub fn get_notes_location() -> String {
         .unwrap();
     working_path.truncate(working_path.len() - "src-tauri".len());
     working_path.push_str("settings.json");
-
-    println!("settings path {}", working_path);
 
     let settings_data = fs::read_to_string(working_path).expect("Failed to read settings");
     let settings: Settings = match serde_json::from_str(&settings_data) {

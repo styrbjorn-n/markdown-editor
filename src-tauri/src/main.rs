@@ -6,9 +6,8 @@ use std::{
     io::Write,
     path::Path,
 };
-
-use utils::{create_settings, get_notes_location, set_notes_location};
 mod utils;
+use utils::{create_settings, set_notes_location};
 
 fn main() {
     let mut working_path = env::current_dir()
@@ -38,8 +37,6 @@ fn main() {
         notes_path.push_str("My Notes/");
         let _ = set_notes_location(notes_path);
     }
-
-    println!("{}", get_notes_location());
 
     markdown_editor_lib::run()
 }
