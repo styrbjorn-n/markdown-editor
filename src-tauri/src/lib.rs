@@ -1,13 +1,16 @@
 use std::fs::{self, File};
 
+use serde::Serialize;
 use utils::get_notes_location;
 
 mod utils;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct Note {
+    title: String,
+    path: String,
+    content: String,
 }
 
 #[tauri::command]
@@ -18,23 +21,38 @@ fn new_md(new_file_name: &str) {
 }
 
 #[tauri::command]
-fn read_file(filename: &str) -> String {
+fn read_file(filename: &str) -> Note {
     println!("trying to read file");
     let file_location = get_notes_location();
-    if let Ok(contents) = fs::read_to_string(file_location + filename + ".md") {
+    if let Ok(contents) = fs::read_to_string(file_location.clone() + filename + ".md") {
         println!("file loaded");
-        return contents;
+        let new_note = Note {
+            title: filename.to_string(),
+            path: file_location + filename + ".md",
+            content: contents,
+        };
+        println!("{:#?}", new_note);
+        return new_note;
     } else {
         println!("file failed to load");
-        return "".to_string();
+        let new_note = Note {
+            title: "".to_string(),
+            path: file_location,
+            content: "".to_string(),
+        };
+        println!("{:#?}", new_note);
+        return new_note;
     }
 }
+
+#[tauri::command]
+fn save_file(note: Note) {}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![greet, new_md, read_file])
+        .invoke_handler(tauri::generate_handler![new_md, read_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

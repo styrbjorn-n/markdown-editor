@@ -4,19 +4,27 @@ import { invoke } from '@tauri-apps/api/core';
 import { SidebarTrigger } from './components/ui/sidebar';
 import { Textarea } from './components/ui/textarea';
 
+type Note = {
+  title: String;
+  path: String;
+  content: string;
+};
+
 function App() {
   const filename = 'welcome';
-  const [greetMsg, setGreetMsg] = useState('');
-  const [name, setName] = useState('');
-  const [textContent, setTextContent] = useState('');
+  const [notes, setNotes] = useState<Note[]>();
+  const [textContent, setTextContent] = useState<string>('');
 
   async function readFile() {
-    setTextContent(await invoke('read_file', { filename }));
-  }
+    const res: Note = await invoke('read_file', { filename });
+    console.log(res);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke('greet', { name }));
+    setNotes([res]);
+    if (res) {
+      setTextContent(res.content);
+    } else {
+      setTextContent('womp womp');
+    }
   }
 
   useEffect(() => {
