@@ -60,10 +60,7 @@ pub fn run() {
             let notes_vault = store.get("notesVault");
 
             match notes_vault {
-                Option::Value(None, Some(st)) => {
-                    println!("{:?}", st)
-                }
-                _ => {
+                None => {
                     let mut working_path = env::current_dir()
                         .expect("could not get path")
                         .into_os_string()
@@ -73,6 +70,9 @@ pub fn run() {
                     working_path.push_str("My Notes");
 
                     store.set("notesVault".to_string(), json!(working_path));
+                }
+                _ => {
+                    println!("{:?}", notes_vault);
                 }
             }
 
