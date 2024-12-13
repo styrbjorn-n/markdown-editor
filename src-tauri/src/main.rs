@@ -7,7 +7,6 @@ use std::{
     path::Path,
 };
 mod utils;
-use utils::{create_settings, set_notes_location};
 
 fn main() {
     let mut working_path = env::current_dir()
@@ -25,17 +24,6 @@ fn main() {
         first_file
             .write("hello world".as_bytes())
             .expect("Failed to write to file");
-        let working_path = env::current_dir()
-            .expect("could not get path")
-            .into_os_string()
-            .into_string()
-            .unwrap();
-        create_settings();
-
-        let mut notes_path = working_path.clone();
-        notes_path.truncate(notes_path.len() - "src-tauri".len());
-        notes_path.push_str("My Notes/");
-        let _ = set_notes_location(notes_path);
     }
 
     markdown_editor_lib::run()

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { SidebarTrigger } from './components/ui/sidebar';
 import { Textarea } from './components/ui/textarea';
-
+// import { Store } from '@tauri-apps/plugin-store';
 type Note = {
   title: String;
   path: String;
@@ -16,16 +16,18 @@ function App() {
   const [textContent, setTextContent] = useState<string>('');
 
   async function readFile() {
-    const res: Note = await invoke('read_file', { filename });
-    console.log(res);
-
-    setNotes([res]);
-    if (res) {
-      setTextContent(res.content);
-    } else {
-      setTextContent('womp womp');
-    }
+    // const res: Note = await invoke('read_file', { filename });
+    // console.log(res);
+    // setNotes([res]);
+    // if (res) {
+    //   setTextContent(res.content);
+    // } else {
+    //   setTextContent('womp womp');
+    // }
+    console.log('reading file');
   }
+
+  // const store = await Store.load('settings.json');
 
   useEffect(() => {
     if (textContent === '') {

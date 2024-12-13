@@ -1,8 +1,11 @@
-use std::fs::{self, File};
-
 use serde::Serialize;
+use serde_json::json;
+use std::{
+    env,
+    fs::{self, File},
+};
+use tauri_plugin_store::StoreExt;
 use utils::get_notes_location;
-
 mod utils;
 
 #[derive(Serialize, Debug)]
@@ -12,7 +15,6 @@ struct Note {
     path: String,
     content: String,
 }
-
 #[tauri::command]
 fn new_md(new_file_name: &str) {
     let new_note_loaction = get_notes_location();
@@ -52,6 +54,30 @@ fn save_file(note: Note) {}
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
+        .setup(|app| {
+            let store = app.store("settings.json")?;
+            let notes_vault = store.get("notesVault");
+
+            match notes_vault {
+                Option::Value(None, Some(st)) => {
+                    println!("{:?}", st)
+                }
+                _ => {
+                    let mut working_path = env::current_dir()
+                        .expect("could not get path")
+                        .into_os_string()
+                        .into_string()
+                        .unwrap();
+                    working_path.truncate(working_path.len() - "src-tauri".len());
+                    working_path.push_str("My Notes");
+
+                    store.set("notesVault".to_string(), json!(working_path));
+                }
+            }
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![new_md, read_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

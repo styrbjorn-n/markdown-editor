@@ -4,7 +4,6 @@ use std::io::Write;
 use std::path::Path;
 use std::process::exit;
 use std::{env, fs};
-use tauri::Emitter;
 
 #[derive(Serialize)]
 struct NewSettings {
