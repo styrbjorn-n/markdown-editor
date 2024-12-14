@@ -18,13 +18,17 @@ import {
   DialogTrigger,
 } from './ui/dialog';
 import { Button } from './ui/button';
+import { LazyStore } from '@tauri-apps/plugin-store';
 
 export function AppSidebar() {
   const [newFileName, setNewFileName] = useState('');
   const [isNewFileOpen, setIsNewFileOpen] = useState(false);
 
   async function newMd(newFileName: String) {
-    await invoke('new_md', { newFileName });
+    const store = new LazyStore('settings.json');
+    const vaultPath = await store.get<{ value: String }>('notesVault');
+
+    const newMd = await invoke('new_md', { newFileName, vaultPath });
     setIsNewFileOpen(false);
     setNewFileName('');
   }

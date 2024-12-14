@@ -5,8 +5,6 @@ use std::{
     fs::{self, File},
 };
 use tauri_plugin_store::StoreExt;
-use utils::get_notes_location;
-mod utils;
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -16,21 +14,18 @@ struct Note {
     content: String,
 }
 #[tauri::command]
-fn new_md(new_file_name: &str) {
-    let new_note_loaction = get_notes_location();
-
-    File::create(new_note_loaction + new_file_name + ".md").expect("failed to create new note");
+fn new_md(new_file_name: &str, vault_path: String) {
+    File::create(vault_path + "/" + new_file_name + ".md").expect("failed to create new note");
 }
 
 #[tauri::command]
-fn read_file(filename: &str) -> Note {
+fn read_file(filename: &str, vault_path: String) -> Note {
     println!("trying to read file");
-    let file_location = get_notes_location();
-    if let Ok(contents) = fs::read_to_string(file_location.clone() + filename + ".md") {
+    if let Ok(contents) = fs::read_to_string(vault_path.clone() + "/" + filename + ".md") {
         println!("file loaded");
         let new_note = Note {
             title: filename.to_string(),
-            path: file_location + filename + ".md",
+            path: vault_path + filename + ".md",
             content: contents,
         };
         println!("{:#?}", new_note);
@@ -39,7 +34,7 @@ fn read_file(filename: &str) -> Note {
         println!("file failed to load");
         let new_note = Note {
             title: "".to_string(),
-            path: file_location,
+            path: vault_path,
             content: "".to_string(),
         };
         println!("{:#?}", new_note);

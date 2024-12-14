@@ -6,7 +6,6 @@ use std::{
     io::Write,
     path::Path,
 };
-mod utils;
 
 fn main() {
     let mut working_path = env::current_dir()
