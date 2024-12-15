@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     env,
@@ -6,7 +6,7 @@ use std::{
 };
 use tauri_plugin_store::StoreExt;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct Note {
     title: String,
@@ -25,7 +25,7 @@ fn read_file(filename: &str, vault_path: String) -> Note {
         println!("file loaded");
         let new_note = Note {
             title: filename.to_string(),
-            path: vault_path + filename + ".md",
+            path: vault_path + "/" + filename + ".md",
             content: contents,
         };
         println!("{:#?}", new_note);
@@ -43,7 +43,9 @@ fn read_file(filename: &str, vault_path: String) -> Note {
 }
 
 #[tauri::command]
-fn save_file(note: Note) {}
+fn save_file(note: Note) {
+    fs::write(note.path, note.content).expect("failed to write to file")
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -73,7 +75,7 @@ pub fn run() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![new_md, read_file])
+        .invoke_handler(tauri::generate_handler![new_md, read_file, save_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

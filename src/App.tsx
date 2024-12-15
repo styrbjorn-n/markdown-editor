@@ -4,7 +4,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { SidebarTrigger } from './components/ui/sidebar';
 import { Textarea } from './components/ui/textarea';
 import { LazyStore } from '@tauri-apps/plugin-store';
-// import { Store } from '@tauri-apps/plugin-store';
+import useDebounce from './hooks/use-debounce';
+import assert from 'assert';
 type Note = {
   title: String;
   path: String;
@@ -16,6 +17,7 @@ function App() {
   const store = new LazyStore('settings.json');
   const [notes, setNotes] = useState<Note[]>();
   const [textContent, setTextContent] = useState<string>('');
+  const debouncedContent = useDebounce(textContent);
 
   async function readFile() {
     const vaultPath = await store.get<{ value: String }>('notesVault');
@@ -30,7 +32,9 @@ function App() {
     console.log('reading file');
   }
 
-  // const store = await Store.load('settings.json');
+  async function saveFile(note: Note) {
+    await invoke('save_file', { note });
+  }
 
   useEffect(() => {
     if (textContent === '') {
@@ -38,8 +42,17 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!notes) {
+      console.log('no notes open');
+    } else {
+      const note = { ...notes[0], content: textContent };
+      saveFile(note);
+    }
+  }, [debouncedContent]);
+
   return (
-    <div className="h-full w-full shrink flex flex-col item ">
+    <div className=" relative h-full w-full shrink flex flex-col item ">
       <SidebarTrigger />
       <div className="w-full h-full flex justify-center ">
         <div className="w-full h-full max-w-[600px] relative mx-8 border-t ">
