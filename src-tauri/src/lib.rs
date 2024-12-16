@@ -28,7 +28,6 @@ fn read_file(filename: &str, vault_path: String) -> Note {
             path: vault_path + "/" + filename + ".md",
             content: contents,
         };
-        println!("{:#?}", new_note);
         return new_note;
     } else {
         println!("file failed to load");
@@ -37,7 +36,6 @@ fn read_file(filename: &str, vault_path: String) -> Note {
             path: vault_path,
             content: "".to_string(),
         };
-        println!("{:#?}", new_note);
         return new_note;
     }
 }

@@ -5,8 +5,8 @@ import { SidebarTrigger } from './components/ui/sidebar';
 import { Textarea } from './components/ui/textarea';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import useDebounce from './hooks/use-debounce';
-import assert from 'assert';
-type Note = {
+
+export type Note = {
   title: String;
   path: String;
   content: string;
