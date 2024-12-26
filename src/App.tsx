@@ -5,12 +5,15 @@ import { SidebarTrigger } from './components/ui/sidebar';
 import { Textarea } from './components/ui/textarea';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import useDebounce from './hooks/use-debounce';
+import { z } from 'zod';
 
-export type Note = {
-  title: String;
-  path: String;
-  content: string;
-};
+export const NoteSchema = z.object({
+  title: z.string(),
+  path: z.string(),
+  content: z.string(),
+});
+
+export type Note = z.infer<typeof NoteSchema>;
 
 function App() {
   const filename = 'welcome';

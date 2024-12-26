@@ -22,7 +22,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider storageKey="vite-ui-theme">
       <SearchDialog />
-
       <SidebarProvider>
         <AppSidebar />
         <main className="w-full">

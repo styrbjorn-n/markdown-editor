@@ -20,9 +20,7 @@ fn new_md(new_file_name: &str, vault_path: String) {
 
 #[tauri::command]
 fn read_file(filename: &str, vault_path: String) -> Note {
-    println!("trying to read file");
     if let Ok(contents) = fs::read_to_string(vault_path.clone() + "/" + filename + ".md") {
-        println!("file loaded");
         let new_note = Note {
             title: filename.to_string(),
             path: vault_path + "/" + filename + ".md",
@@ -43,6 +41,28 @@ fn read_file(filename: &str, vault_path: String) -> Note {
 #[tauri::command]
 fn save_file(note: Note) {
     fs::write(note.path, note.content).expect("failed to write to file")
+}
+
+#[tauri::command]
+fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
+    let notes = fs::read_dir(vault_path.clone()).unwrap();
+    let mut res: Vec<Note> = Vec::new();
+
+    for note in notes {
+        let path = note.unwrap().path().display().to_string();
+        let mut note_name = path.clone();
+        let to_replace = vault_path.clone() + "/";
+        note_name = note_name
+            .replace(".md", "")
+            .replace(to_replace.as_str(), "");
+        res.push(Note {
+            title: note_name,
+            path: path,
+            content: "".to_string(),
+        });
+    }
+
+    return res;
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -67,13 +87,18 @@ pub fn run() {
                     store.set("notesVault".to_string(), json!(working_path));
                 }
                 _ => {
-                    println!("{:?}", notes_vault);
+                    println!("Vault exists");
                 }
             }
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![new_md, read_file, save_file])
+        .invoke_handler(tauri::generate_handler![
+            new_md,
+            read_file,
+            save_file,
+            get_search_res
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
