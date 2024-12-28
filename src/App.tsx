@@ -39,10 +39,17 @@ function App() {
     await invoke('save_file', { note });
   }
 
+  async function test() {
+    const vaultPath = await store.get<{ value: String }>('notesVault');
+    const vaultVeiw = await invoke('get_vault_view', { vaultPath });
+    return vaultVeiw;
+  }
+
   useEffect(() => {
     if (textContent === '') {
       readFile();
     }
+    console.log(test());
   }, []);
 
   useEffect(() => {

@@ -3,8 +3,11 @@ use serde_json::json;
 use std::{
     env,
     fs::{self, File},
+    path::Path,
 };
 use tauri_plugin_store::StoreExt;
+use utils::visit_dirs;
+mod utils;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -13,6 +16,7 @@ struct Note {
     path: String,
     content: String,
 }
+
 #[tauri::command]
 fn new_md(new_file_name: &str, vault_path: String) {
     File::create(vault_path + "/" + new_file_name + ".md").expect("failed to create new note");
@@ -41,6 +45,27 @@ fn read_file(filename: &str, vault_path: String) -> Note {
 #[tauri::command]
 fn save_file(note: Note) {
     fs::write(note.path, note.content).expect("failed to write to file")
+}
+
+#[tauri::command]
+fn get_vault_view(vault_path: String) -> Vec<Note> {
+    let mut vault_tree: Vec<Note> = Vec::new();
+    let to_replace = vault_path.clone() + "/";
+    let dir = Path::new(&vault_path);
+    visit_dirs(&dir, &mut |entry| {
+        println!("{}", entry.path().display());
+        let mut note_title = entry.path().display().to_string();
+        note_title = note_title
+            .replace(".md", "")
+            .replace(to_replace.as_str(), "");
+        vault_tree.push(Note {
+            title: note_title,
+            path: entry.path().display().to_string(),
+            content: "".to_string(),
+        });
+    })
+    .unwrap();
+    vault_tree
 }
 
 #[tauri::command]
@@ -97,7 +122,8 @@ pub fn run() {
             new_md,
             read_file,
             save_file,
-            get_search_res
+            get_search_res,
+            get_vault_view
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
