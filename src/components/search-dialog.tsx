@@ -11,8 +11,13 @@ import { Note, NoteSchema } from '@/App';
 import { Input } from './ui/input';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
+import { Button } from './ui/button';
 
-export function SearchDialog() {
+export function SearchDialog({
+  onOpenNewNote,
+}: {
+  onOpenNewNote: (newNote: Note) => void;
+}) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchRes, setSearchRes] = useState<Note[]>();
@@ -37,7 +42,11 @@ export function SearchDialog() {
   function handleclose() {
     setIsSearchOpen(false);
     setSearchTerm('');
-    setSearchTerm('');
+  }
+
+  function handleClick(noteName: Note) {
+    onOpenNewNote(noteName);
+    handleclose();
   }
 
   useEffect(() => {
@@ -58,7 +67,11 @@ export function SearchDialog() {
         />
         <ol>
           {searchRes?.map((n) => (
-            <li>{n.title}</li>
+            <li key={n.title + n.path}>
+              <Button variant="ghost" onClick={() => handleClick(n)}>
+                {n.title}
+              </Button>
+            </li>
           ))}
         </ol>
       </DialogContent>

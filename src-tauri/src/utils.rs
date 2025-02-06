@@ -2,7 +2,7 @@ use std::fs::{self, DirEntry};
 use std::io;
 use std::path::Path;
 
-// one possible implementation of walking a directory only visiting files
+// one possible implementation of walking a directory only visiting files yoiked for gpt
 pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {

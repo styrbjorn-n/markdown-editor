@@ -53,11 +53,11 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
     let to_replace = vault_path.clone() + "/";
     let dir = Path::new(&vault_path);
     visit_dirs(&dir, &mut |entry| {
-        println!("{}", entry.path().display());
         let mut note_title = entry.path().display().to_string();
         note_title = note_title
             .replace(".md", "")
             .replace(to_replace.as_str(), "");
+        println!("{}", note_title);
         vault_tree.push(Note {
             title: note_title,
             path: entry.path().display().to_string(),
@@ -70,22 +70,8 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
 
 #[tauri::command]
 fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
-    let notes = fs::read_dir(vault_path.clone()).unwrap();
-    let mut res: Vec<Note> = Vec::new();
-
-    for note in notes {
-        let path = note.unwrap().path().display().to_string();
-        let mut note_name = path.clone();
-        let to_replace = vault_path.clone() + "/";
-        note_name = note_name
-            .replace(".md", "")
-            .replace(to_replace.as_str(), "");
-        res.push(Note {
-            title: note_name,
-            path: path,
-            content: "".to_string(),
-        });
-    }
+    let notes = get_vault_view(vault_path);
+    let mut res: Vec<Note> = notes;
 
     return res;
 }

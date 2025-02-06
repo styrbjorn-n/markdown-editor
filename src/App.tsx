@@ -6,6 +6,7 @@ import { Textarea } from './components/ui/textarea';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import useDebounce from './hooks/use-debounce';
 import { z } from 'zod';
+import { SearchDialog } from './components/search-dialog';
 
 export const NoteSchema = z.object({
   title: z.string(),
@@ -16,13 +17,13 @@ export const NoteSchema = z.object({
 export type Note = z.infer<typeof NoteSchema>;
 
 function App() {
-  const filename = 'welcome';
   const store = new LazyStore('settings.json');
   const [notes, setNotes] = useState<Note[]>();
   const [textContent, setTextContent] = useState<string>('');
+  const [newNote, setNewNote] = useState<Note>();
   const debouncedContent = useDebounce(textContent);
 
-  async function readFile() {
+  async function readFile(filename: string) {
     const vaultPath = await store.get<{ value: String }>('notesVault');
     const res: Note = await invoke('read_file', { filename, vaultPath });
     console.log(res);
@@ -39,17 +40,14 @@ function App() {
     await invoke('save_file', { note });
   }
 
-  async function test() {
-    const vaultPath = await store.get<{ value: String }>('notesVault');
-    const vaultVeiw = await invoke('get_vault_view', { vaultPath });
-    return vaultVeiw;
+  function openNewNote(newNote: Note) {
+    setNewNote(newNote);
   }
 
   useEffect(() => {
     if (textContent === '') {
-      readFile();
+      readFile('welcome');
     }
-    console.log(test());
   }, []);
 
   useEffect(() => {
@@ -61,9 +59,19 @@ function App() {
     }
   }, [debouncedContent]);
 
+  useEffect(() => {
+    console.log('new note:', newNote);
+    if (newNote && notes) {
+      const note = { ...notes[0], content: textContent };
+      saveFile(note);
+      readFile(newNote?.title);
+    }
+  }, [newNote]);
+
   return (
     <div className=" relative h-full w-full shrink flex flex-col item ">
       <SidebarTrigger />
+      <SearchDialog onOpenNewNote={openNewNote} />
       <div className="w-full h-full flex justify-center ">
         <div className="w-full h-full max-w-[600px] relative mx-8 border-t ">
           <p className="absolute top-[-1.5rem] text-gray-500 font-thin left-0">
