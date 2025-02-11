@@ -64,7 +64,7 @@ function App() {
     if (newNote && notes) {
       const note = { ...notes[0], content: textContent };
       saveFile(note);
-      readFile(newNote?.title);
+      readFile(newNote.title);
     }
   }, [newNote]);
 

@@ -67,10 +67,32 @@ export function SearchDialog({
         />
         <ol>
           {searchRes?.map((n) => (
-            <li key={n.title + n.path}>
-              <Button variant="ghost" onClick={() => handleClick(n)}>
-                {n.title}
+            <li
+              key={n.title + n.path}
+              className="flex items-center gap-2 hover:bg-accent px-3 rounded"
+            >
+              <Button
+                variant="ghost"
+                onClick={() => handleClick(n)}
+                className="p-0 hover:bg-transparent"
+              >
+                {n.title.includes('/')
+                  ? n.title.slice(n.title.lastIndexOf('/') + 1)
+                  : n.title}
               </Button>
+
+              {n.title.includes('/') ? (
+                <>
+                  <span className="opacity-45">-</span>
+                  <p className="opacity-45 text-sm">
+                    {n.title
+                      .slice(0, n.title.lastIndexOf('/'))
+                      .replace(/\//g, ' / ')}
+                  </p>
+                </>
+              ) : (
+                ''
+              )}
             </li>
           ))}
         </ol>
