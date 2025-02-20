@@ -65,34 +65,31 @@ export function SearchDialog({
           onChange={(e) => setSearchTerm(e.target.value)}
           value={searchTerm}
         />
-        <ol>
+        <ol className='overflow-y-scroll'>
           {searchRes?.map((n) => (
-            <li
-              key={n.title + n.path}
-              className="flex items-center gap-2 hover:bg-accent px-3 rounded"
-            >
+            <li key={n.title + n.path}>
               <Button
                 variant="ghost"
                 onClick={() => handleClick(n)}
-                className="p-0 hover:bg-transparent"
+                className="py-0 flex items-center gap-2 px-3 rounded w-full justify-start"
               >
                 {n.title.includes('/')
                   ? n.title.slice(n.title.lastIndexOf('/') + 1)
                   : n.title}
-              </Button>
 
-              {n.title.includes('/') ? (
-                <>
-                  <span className="opacity-45">-</span>
-                  <p className="opacity-45 text-sm">
-                    {n.title
-                      .slice(0, n.title.lastIndexOf('/'))
-                      .replace(/\//g, ' / ')}
-                  </p>
-                </>
-              ) : (
-                ''
-              )}
+                {n.title.includes('/') ? (
+                  <>
+                    <span className="opacity-45">-</span>
+                    <p className="opacity-45 text-sm">
+                      {n.title
+                        .slice(0, n.title.lastIndexOf('/'))
+                        .replace(/\//g, ' / ')}
+                    </p>
+                  </>
+                ) : (
+                  ''
+                )}
+              </Button>
             </li>
           ))}
         </ol>

@@ -26,7 +26,6 @@ function App() {
   async function readFile(filename: string) {
     const vaultPath = await store.get<{ value: String }>('notesVault');
     const res: Note = await invoke('read_file', { filename, vaultPath });
-    console.log(res);
     setNotes([res]);
     if (res) {
       setTextContent(res.content);
@@ -74,8 +73,10 @@ function App() {
       <SearchDialog onOpenNewNote={openNewNote} />
       <div className="w-full h-full flex justify-center ">
         <div className="w-full h-full max-w-[600px] relative mx-8 border-t ">
-          <p className="absolute top-[-1.5rem] text-gray-500 font-thin left-0">
-            filename
+          <p className="absolute top-[-1.5rem]  font-thin left-0">
+            {notes
+              ? notes[0].title.slice(notes[0].title.lastIndexOf('/') + 1)
+              : 'filename'}
           </p>
           <Textarea
             value={textContent}

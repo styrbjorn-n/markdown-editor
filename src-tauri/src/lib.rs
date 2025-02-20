@@ -17,6 +17,14 @@ struct Note {
     content: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct Folder {
+    name: String,
+    notes: Vec<Note>,
+    sub_folders: Vec<Folder>,
+}
+
 #[tauri::command]
 fn new_md(new_file_name: &str, vault_path: String) {
     File::create(vault_path + "/" + new_file_name + ".md").expect("failed to create new note");
@@ -57,7 +65,6 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
         note_title = note_title
             .replace(".md", "")
             .replace(to_replace.as_str(), "");
-        println!("{}", note_title);
         vault_tree.push(Note {
             title: note_title,
             path: entry.path().display().to_string(),
@@ -65,15 +72,29 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
         });
     })
     .unwrap();
+    vault_tree.sort_by_key(|note| note.title.matches('/').count());
+
     vault_tree
 }
 
 #[tauri::command]
 fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
-    let notes = get_vault_view(vault_path);
-    let mut res: Vec<Note> = notes;
-
-    return res;
+    let mut vault_tree: Vec<Note> = Vec::new();
+    let to_replace = vault_path.clone() + "/";
+    let dir = Path::new(&vault_path);
+    visit_dirs(&dir, &mut |entry| {
+        let mut note_title = entry.path().display().to_string();
+        note_title = note_title
+            .replace(".md", "")
+            .replace(to_replace.as_str(), "");
+        vault_tree.push(Note {
+            title: note_title,
+            path: entry.path().display().to_string(),
+            content: "".to_string(),
+        });
+    })
+    .unwrap();
+    return vault_tree;
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

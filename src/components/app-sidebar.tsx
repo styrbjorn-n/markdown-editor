@@ -7,7 +7,7 @@ import {
 import { invoke } from '@tauri-apps/api/core';
 
 import { Input } from './ui/input';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogClose,
@@ -19,10 +19,18 @@ import {
 } from './ui/dialog';
 import { Button } from './ui/button';
 import { LazyStore } from '@tauri-apps/plugin-store';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from './ui/accordion';
+import { Note, NoteSchema } from '@/App';
 
 export function AppSidebar() {
   const [newFileName, setNewFileName] = useState('');
   const [isNewFileOpen, setIsNewFileOpen] = useState(false);
+  const [Vault, setVault] = useState<Note[]>();
 
   async function newMd(newFileName: String) {
     const store = new LazyStore('settings.json');
@@ -31,11 +39,35 @@ export function AppSidebar() {
     const newMd = await invoke('new_md', { newFileName, vaultPath });
     setIsNewFileOpen(false);
     setNewFileName('');
+    getVault();
   }
+
+  async function getVault() {
+    const store = new LazyStore('settings.json');
+    const vaultPath = await store.get<{ value: String }>('notesVault');
+    const res = await invoke('get_vault_view', { vaultPath });
+    const parsedRes = NoteSchema.array().safeParse(res);
+    if (parsedRes.success) {
+      setVault(parsedRes.data);
+      console.log('vault yoiked');
+      parsedRes.data.forEach((note) => {
+        console.log(note.title);
+      });
+    } else {
+      console.log(parsedRes.error);
+    }
+  }
+
+  useEffect(() => {
+    if (!Vault) {
+      getVault();
+    }
+  }, [Vault]);
+
   return (
     <Sidebar>
       <SidebarHeader />
-      <SidebarContent>
+      <SidebarContent className="p-4">
         <Dialog open={isNewFileOpen} onOpenChange={setIsNewFileOpen}>
           <DialogTrigger>new doc</DialogTrigger>
           <DialogContent>
@@ -63,6 +95,13 @@ export function AppSidebar() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <Accordion type="single" collapsible>
+          <AccordionItem value="Vault">
+            <AccordionTrigger>Notes Vault</AccordionTrigger>
+            <AccordionContent>asd</AccordionContent>
+            <AccordionContent>asd</AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
