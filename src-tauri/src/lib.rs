@@ -20,14 +20,20 @@ struct Note {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct Folder {
-    name: String,
     notes: Vec<Note>,
     sub_folders: Vec<Folder>,
 }
 
 #[tauri::command]
 fn new_md(new_file_name: &str, vault_path: String) {
-    File::create(vault_path + "/" + new_file_name + ".md").expect("failed to create new note");
+    let new_file: String = vault_path.clone() + "/" + &new_file_name + ".md";
+    File::create(&new_file).expect("failed to create new note");
+
+    // let new_note = Note {
+    // title: new_file_name.to_string(),
+    // path: new_file.to_string(),
+    // content: "".to_string(),
+    // };
 }
 
 #[tauri::command]
@@ -76,6 +82,15 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
 
     vault_tree
 }
+
+// fn load_dir(dir: &Path) -> Folder {
+// let paths = fs::read_dir(dir).unwrap();
+// let mut dir: Folder;
+
+// for path in paths {
+// println!("Name: {}", path.unwrap().path().display())
+// }
+// }
 
 #[tauri::command]
 fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {

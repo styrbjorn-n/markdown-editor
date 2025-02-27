@@ -49,10 +49,10 @@ export function AppSidebar() {
     const parsedRes = NoteSchema.array().safeParse(res);
     if (parsedRes.success) {
       setVault(parsedRes.data);
-      console.log('vault yoiked');
-      parsedRes.data.forEach((note) => {
-        console.log(note.title);
-      });
+      // console.log('vault yoiked');
+      // parsedRes.data.forEach((note) => {
+      // console.log(note.title);
+      // });
     } else {
       console.log(parsedRes.error);
     }

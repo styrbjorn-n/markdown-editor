@@ -51,7 +51,7 @@ export function SearchDialog({
 
   useEffect(() => {
     getSearchRes(searchTerm);
-  }, [searchTerm]);
+  }, [searchTerm, isSearchOpen]);
 
   useOpenSearch({ isSearchOpen, toggleSearch });
   return (
