@@ -25,15 +25,16 @@ struct Folder {
 }
 
 #[tauri::command]
-fn new_md(new_file_name: &str, vault_path: String) {
+fn new_md(new_file_name: &str, vault_path: String) -> Note {
     let new_file: String = vault_path.clone() + "/" + &new_file_name + ".md";
     File::create(&new_file).expect("failed to create new note");
 
-    // let new_note = Note {
-    // title: new_file_name.to_string(),
-    // path: new_file.to_string(),
-    // content: "".to_string(),
-    // };
+    let new_note = Note {
+        title: new_file_name.to_string(),
+        path: new_file.to_string(),
+        content: "".to_string(),
+    };
+    return new_note;
 }
 
 #[tauri::command]

@@ -12,15 +12,13 @@ import { Input } from './ui/input';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { Button } from './ui/button';
+import { useNoteContext } from '@/context/noteContext';
 
-export function SearchDialog({
-  onOpenNewNote,
-}: {
-  onOpenNewNote: (newNote: Note) => void;
-}) {
+export function SearchDialog() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchRes, setSearchRes] = useState<Note[]>();
+  const { setNewNote } = useNoteContext();
 
   function toggleSearch(): void {
     setIsSearchOpen((prev) => !prev);
@@ -45,7 +43,7 @@ export function SearchDialog({
   }
 
   function handleClick(noteName: Note) {
-    onOpenNewNote(noteName);
+    setNewNote(noteName);
     handleclose();
   }
 
@@ -65,7 +63,7 @@ export function SearchDialog({
           onChange={(e) => setSearchTerm(e.target.value)}
           value={searchTerm}
         />
-        <ol className='overflow-y-scroll'>
+        <ol className="overflow-y-scroll">
           {searchRes?.map((n) => (
             <li key={n.title + n.path}>
               <Button

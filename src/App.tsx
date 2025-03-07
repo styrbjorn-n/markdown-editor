@@ -40,10 +40,6 @@ function App() {
     console.log(note.title + ' saved');
   }
 
-  function openNewNote(newNote: Note) {
-    setNewNote(newNote);
-  }
-
   useEffect(() => {
     console.log('loading first time');
     if (!textAreaRef.current?.value) {
@@ -81,13 +77,13 @@ function App() {
   }, [note]);
 
   return (
-    <NoteContext.Provider value={{ note, setNote }}>
+    <NoteContext.Provider value={{ note, setNote, newNote, setNewNote }}>
       <SidebarProvider>
         <AppSidebar />
         <main className="w-full">
           <div className=" relative h-full w-full shrink flex flex-col item ">
             <SidebarTrigger />
-            <SearchDialog onOpenNewNote={openNewNote} />
+            <SearchDialog />
             <div className="w-full h-full flex justify-center ">
               <div
                 className="w-full h-full max-w-[600px] relative mx-8
