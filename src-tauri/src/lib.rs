@@ -21,7 +21,7 @@ struct Note {
 #[serde(rename_all = "camelCase")]
 struct Folder {
     notes: Vec<Note>,
-    sub_folders: Vec<Folder>,
+    sub_folders: Vec<String>,
 }
 
 #[tauri::command]
@@ -84,14 +84,34 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
     vault_tree
 }
 
-// fn load_dir(dir: &Path) -> Folder {
-// let paths = fs::read_dir(dir).unwrap();
-// let mut dir: Folder;
+#[tauri::command]
+fn load_dir(dir: &Path, vault_path: String) -> Folder {
+    let paths = fs::read_dir(dir).unwrap();
+    let mut folder: Folder = Folder {
+        notes: Vec::new(),
+        sub_folders: Vec::new(),
+    };
 
-// for path in paths {
-// println!("Name: {}", path.unwrap().path().display())
-// }
-// }
+    for path in paths {
+        let entry = path.expect("Could not get entry");
+        let file_type = entry.file_type().expect("could not get file type");
+        let to_replace = vault_path.clone() + "/";
+
+        if (file_type.is_dir()) {
+            folder.sub_folders.push(entry.path().display().to_string());
+        } else if (file_type.is_file()) {
+            let filename = entry
+                .path()
+                .display()
+                .to_string()
+                .replace(to_replace.as_str(), "");
+            let note = read_file(filename.as_str(), vault_path.clone());
+            folder.notes.push(note);
+        }
+    }
+
+    folder
+}
 
 #[tauri::command]
 fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
@@ -146,7 +166,8 @@ pub fn run() {
             read_file,
             save_file,
             get_search_res,
-            get_vault_view
+            get_vault_view,
+            load_dir
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

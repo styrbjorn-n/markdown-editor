@@ -63,6 +63,15 @@ export function AppSidebar() {
     }
   }
 
+  async function getFolder() {
+    // should be moved into the folder comp when its built and run when the a folder is opend
+    const store = new LazyStore('settings.json');
+    const vaultPath = await store.get<{ value: String }>('notesVault');
+    const dir = vaultPath;
+    const res = await invoke('load_dir', { dir, vaultPath });
+    console.log(res);
+  }
+
   useEffect(() => {
     if (!Vault) {
       getVault();
