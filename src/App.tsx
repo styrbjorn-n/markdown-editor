@@ -29,9 +29,10 @@ function App() {
     const vaultPath = await store.get<{ value: String }>('notesVault');
     const res: Note = await invoke('read_file', { filename, vaultPath });
     setNote({ ...res });
+    console.log(res?.content);
 
     if (textAreaRef.current) {
-      textAreaRef.current.value = res?.content || 'womp womp';
+      textAreaRef.current.value = res?.content;
     }
   }
 

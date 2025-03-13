@@ -86,6 +86,7 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
 
 #[tauri::command]
 fn load_dir(dir: &Path, vault_path: String) -> Folder {
+    println!("{:?}", dir.to_str());
     let paths = fs::read_dir(dir).unwrap();
     let mut folder: Folder = Folder {
         notes: Vec::new(),
@@ -98,11 +99,7 @@ fn load_dir(dir: &Path, vault_path: String) -> Folder {
         let to_replace = vault_path.clone() + "/";
 
         if file_type.is_dir() {
-            let subfolder = entry
-                .path()
-                .display()
-                .to_string()
-                .replace(to_replace.as_str(), "");
+            let subfolder = entry.path().display().to_string();
             folder.sub_folders.push(subfolder);
         } else if file_type.is_file() {
             let filename = entry

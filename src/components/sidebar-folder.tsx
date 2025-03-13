@@ -1,10 +1,18 @@
 import { Note, NoteSchema } from '@/App';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 
-export function SidebarFolder({ path }: { path?: String }) {
+export function SidebarFolder({
+  path,
+  folderName,
+  deepth,
+}: {
+  path?: String;
+  folderName?: String; // for rendering
+  deepth?: number; // for indenting the files
+}) {
   const folderSchema = z.object({
     notes: NoteSchema.array(),
     subFolders: z.string().array(),
@@ -13,46 +21,53 @@ export function SidebarFolder({ path }: { path?: String }) {
   const store = new LazyStore('settings.json');
   const [notes, setNotes] = useState<Note[]>([]);
   const [subFolders, setSubFolders] = useState<String[]>([]);
-  let dir = path;
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   async function getFolder() {
-    const vaultPath = await store.get<{ value: String }>('notesVault');
-    if (path === undefined || path === null) {
-      //@ts-ignore
-      //im not spending time on this type error
-      dir = vaultPath;
-    }
-    const res = await invoke('load_dir', { dir, vaultPath });
-    const parsedRes = folderSchema.safeParse(res);
+    try {
+      const vaultPath = await store.get<{ value: String }>('notesVault');
+      const dir = path ?? vaultPath;
 
-    if (parsedRes.success === true) {
-      setNotes(parsedRes.data.notes);
-      setSubFolders(parsedRes.data.subFolders);
-    } else {
-      console.log('Error: ', parsedRes.error);
+      const res = await invoke('load_dir', { dir, vaultPath });
+      const parsedRes = folderSchema.safeParse(res);
+
+      if (parsedRes.success === true) {
+        setNotes(
+          parsedRes.data.notes.sort((a, b) => a.title.localeCompare(b.title))
+        );
+        setSubFolders(parsedRes.data.subFolders.sort());
+        console.log(parsedRes.data.subFolders.sort());
+      } else {
+        console.log('Error: ', parsedRes.error);
+      }
+    } catch (error) {
+      console.error('Failed to load folder:', error);
+    } finally {
+      setIsLoaded(true);
     }
   }
 
-  useEffect(() => {
-    getFolder();
-  }, []);
+  const toggleFolder = () => {
+    if (!isLoaded) {
+      getFolder();
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   return (
-    <ul>
-      {subFolders.length > 0 ? (
-        subFolders.map((subFolder, i) => (
-          <li key={subFolder + i.toString()}>{subFolder}</li>
-        ))
-      ) : (
-        <p>oof</p>
+    <div>
+      <button onClick={toggleFolder}>{folderName || 'vault'}</button>
+      {isOpen && (subFolders.length || notes.length) && (
+        <ul>
+          {subFolders.map((subFolder, i) => (
+            <SidebarFolder key={subFolder + i.toString()} path={subFolder} />
+          ))}
+          {notes.map((note, i) => (
+            <li key={note.path + i.toString()}>{note.title}</li>
+          ))}
+        </ul>
       )}
-      {notes.length > 0 ? (
-        notes.map((note, i) => (
-          <li key={note.path + i.toString()}>{note.title}</li>
-        ))
-      ) : (
-        <p>oof</p>
-      )}
-    </ul>
+    </div>
   );
 }
