@@ -97,14 +97,20 @@ fn load_dir(dir: &Path, vault_path: String) -> Folder {
         let file_type = entry.file_type().expect("could not get file type");
         let to_replace = vault_path.clone() + "/";
 
-        if (file_type.is_dir()) {
-            folder.sub_folders.push(entry.path().display().to_string());
-        } else if (file_type.is_file()) {
-            let filename = entry
+        if file_type.is_dir() {
+            let subfolder = entry
                 .path()
                 .display()
                 .to_string()
                 .replace(to_replace.as_str(), "");
+            folder.sub_folders.push(subfolder);
+        } else if file_type.is_file() {
+            let filename = entry
+                .path()
+                .display()
+                .to_string()
+                .replace(to_replace.as_str(), "")
+                .replace(".md", "");
             let note = read_file(filename.as_str(), vault_path.clone());
             folder.notes.push(note);
         }

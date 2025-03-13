@@ -1,9 +1,4 @@
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-} from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent } from '@/components/ui/sidebar';
 import { invoke } from '@tauri-apps/api/core';
 
 import { Input } from './ui/input';
@@ -19,14 +14,9 @@ import {
 } from './ui/dialog';
 import { Button } from './ui/button';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from './ui/accordion';
 import { Note, NoteSchema } from '@/App';
 import { useNoteContext } from '@/context/noteContext';
+import { SidebarFolder } from './sidebar-folder';
 
 export function AppSidebar() {
   const [newFileName, setNewFileName] = useState('');
@@ -63,15 +53,6 @@ export function AppSidebar() {
     }
   }
 
-  async function getFolder() {
-    // should be moved into the folder comp when its built and run when the a folder is opend
-    const store = new LazyStore('settings.json');
-    const vaultPath = await store.get<{ value: String }>('notesVault');
-    const dir = vaultPath;
-    const res = await invoke('load_dir', { dir, vaultPath });
-    console.log(res);
-  }
-
   useEffect(() => {
     if (!Vault) {
       getVault();
@@ -80,7 +61,6 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader />
       <SidebarContent className="p-4">
         <Dialog open={isNewFileOpen} onOpenChange={setIsNewFileOpen}>
           <DialogTrigger>new doc</DialogTrigger>
@@ -114,15 +94,9 @@ export function AppSidebar() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <Accordion type="single" collapsible>
-          <AccordionItem value="Vault">
-            <AccordionTrigger>Notes Vault</AccordionTrigger>
-            <AccordionContent>asd</AccordionContent>
-            <AccordionContent>asd</AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        {/* shit goes here */}
+        <SidebarFolder />
       </SidebarContent>
-      <SidebarFooter />
     </Sidebar>
   );
 }
