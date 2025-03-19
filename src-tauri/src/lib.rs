@@ -19,9 +19,16 @@ struct Note {
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+struct SubFolder {
+    folder_name: String,
+    folder_path: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct Folder {
     notes: Vec<Note>,
-    sub_folders: Vec<String>,
+    sub_folders: Vec<SubFolder>,
 }
 
 #[tauri::command]
@@ -39,21 +46,25 @@ fn new_md(new_file_name: &str, vault_path: String) -> Note {
 
 #[tauri::command]
 fn read_file(filename: &str, vault_path: String) -> Note {
-    if let Ok(contents) = fs::read_to_string(vault_path.clone() + "/" + filename + ".md") {
-        let new_note = Note {
-            title: filename.to_string(),
-            path: vault_path + "/" + filename + ".md",
+    println!("reading: {}", filename);
+
+    let file_path = format!("{}/{}.md", vault_path, filename);
+    let clean_file_name = filename.rsplitn(2, "/").next().unwrap();
+
+    match fs::read_to_string(&file_path) {
+        Ok(contents) => Note {
+            title: clean_file_name.to_string(),
+            path: file_path,
             content: contents,
-        };
-        return new_note;
-    } else {
-        println!("file failed to load");
-        let new_note = Note {
-            title: "".to_string(),
-            path: vault_path,
-            content: "".to_string(),
-        };
-        return new_note;
+        },
+        Err(err) => {
+            println!("the file failed to load: {}", err);
+            Note {
+                title: "".to_string(),
+                path: vault_path,
+                content: "".to_string(),
+            }
+        }
     }
 }
 
@@ -86,7 +97,6 @@ fn get_vault_view(vault_path: String) -> Vec<Note> {
 
 #[tauri::command]
 fn load_dir(dir: &Path, vault_path: String) -> Folder {
-    println!("{:?}", dir.to_str());
     let paths = fs::read_dir(dir).unwrap();
     let mut folder: Folder = Folder {
         notes: Vec::new(),
@@ -96,17 +106,24 @@ fn load_dir(dir: &Path, vault_path: String) -> Folder {
     for path in paths {
         let entry = path.expect("Could not get entry");
         let file_type = entry.file_type().expect("could not get file type");
-        let to_replace = vault_path.clone() + "/";
+        let to_replace = dir.display().to_string().as_str().to_owned() + "/";
 
         if file_type.is_dir() {
-            let subfolder = entry.path().display().to_string();
-            folder.sub_folders.push(subfolder);
+            let sub_folder = SubFolder {
+                folder_path: entry.path().display().to_string(),
+                folder_name: entry
+                    .path()
+                    .display()
+                    .to_string()
+                    .replace(to_replace.as_str(), ""),
+            };
+            folder.sub_folders.push(sub_folder);
         } else if file_type.is_file() {
             let filename = entry
                 .path()
                 .display()
                 .to_string()
-                .replace(to_replace.as_str(), "")
+                .replace(vault_path.as_str(), "")
                 .replace(".md", "");
             let note = read_file(filename.as_str(), vault_path.clone());
             folder.notes.push(note);
