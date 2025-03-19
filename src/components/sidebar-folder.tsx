@@ -1,17 +1,15 @@
 import { Note, NoteSchema } from '@/App';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 
 export function SidebarFolder({
   path,
   folderName,
-  deepth,
 }: {
   path?: String;
   folderName?: string; // for rendering
-  deepth?: number; // for indenting the files
 }) {
   const subFolderSchema = z.object({
     folderPath: z.string(),
