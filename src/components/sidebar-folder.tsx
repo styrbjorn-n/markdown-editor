@@ -1,4 +1,5 @@
 import { Note, NoteSchema } from '@/App';
+import { tryCatch } from '@/lib/try-catch';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { useState } from 'react';
@@ -9,7 +10,7 @@ export function SidebarFolder({
   folderName,
 }: {
   path?: String;
-  folderName?: string; // for rendering
+  folderName?: string;
 }) {
   const subFolderSchema = z.object({
     folderPath: z.string(),
@@ -28,31 +29,29 @@ export function SidebarFolder({
   const [isLoaded, setIsLoaded] = useState(false);
 
   async function getFolder() {
-    try {
-      const vaultPath = await store.get<{ value: String }>('notesVault');
+    const vaultPath = await store.get<{ value: String }>('notesVault');
 
-      const dir = path ?? vaultPath;
+    const dir = path ?? vaultPath;
 
-      const res = await invoke('load_dir', { dir, vaultPath });
-      const parsedRes = folderSchema.safeParse(res);
+    const { data: folderData, error } = await tryCatch(
+      invoke('load_dir', { dir, vaultPath })
+    );
 
-      if (parsedRes.success === true) {
-        setNotes(
-          parsedRes.data.notes.sort((a, b) => a.title.localeCompare(b.title))
-        );
-        setSubFolders(
-          parsedRes.data.subFolders.sort((a, b) =>
-            a.folderName.localeCompare(b.folderName)
-          )
-        );
-      } else {
-        console.log('Error: ', parsedRes.error);
-      }
-    } catch (error) {
-      console.error('Failed to load folder:', error);
-    } finally {
-      setIsLoaded(true);
+    if (error) {
+      console.error(error);
+      return;
     }
+
+    const parsedFolderData = folderSchema.parse(folderData);
+    setNotes(
+      parsedFolderData.notes.sort((a, b) => a.title.localeCompare(b.title))
+    );
+    setSubFolders(
+      parsedFolderData.subFolders.sort((a, b) =>
+        a.folderName.localeCompare(b.folderName)
+      )
+    );
+    setIsLoaded(true);
   }
 
   const toggleFolder = () => {
@@ -68,7 +67,7 @@ export function SidebarFolder({
         {isOpen ? 'v' : '>'} {folderName || 'vault'}
       </button>
       {isOpen && (subFolders.length || notes.length) && (
-        <ul className="ml-4">
+        <ul className="ml-3">
           {subFolders.map((subFolder, i) => {
             return (
               <SidebarFolder

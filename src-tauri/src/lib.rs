@@ -46,8 +46,6 @@ fn new_md(new_file_name: &str, vault_path: String) -> Note {
 
 #[tauri::command]
 fn read_file(filename: &str, vault_path: String) -> Note {
-    println!("reading: {}", filename);
-
     let file_path = format!("{}/{}.md", vault_path, filename);
     let clean_file_name = filename.rsplitn(2, "/").next().unwrap();
 
@@ -133,8 +131,8 @@ fn load_dir(dir: &Path, vault_path: String) -> Folder {
     folder
 }
 
-#[tauri::command]
-fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
+#[tauri::command] // TODO: Remove underscore infront of search_term when implementing searching
+fn get_search_res(_search_term: String, vault_path: String) -> Vec<Note> {
     let mut vault_tree: Vec<Note> = Vec::new();
     let to_replace = vault_path.clone() + "/";
     let dir = Path::new(&vault_path);

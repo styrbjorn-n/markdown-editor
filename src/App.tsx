@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { SearchDialog } from './components/search-dialog';
 import { NoteContext } from './context/noteContext';
 import { AppSidebar } from './components/app-sidebar';
+import { tryCatch } from './lib/try-catch';
 
 export const NoteSchema = z.object({
   title: z.string(),
@@ -23,30 +24,40 @@ function App() {
   const [note, setNote] = useState<Note>();
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [newNote, setNewNote] = useState<Note>();
+  const [failedToRead, setFailedToRead] = useState(false);
   let debouncedContent = useDebounce(textAreaRef.current?.value || '');
 
   async function readFile(filename: string) {
     const vaultPath = await store.get<{ value: String }>('notesVault');
-    const res: Note = await invoke('read_file', { filename, vaultPath });
-    setNote({ ...res });
-    console.log(res?.content);
+    const { data: res, error } = await tryCatch(
+      invoke('read_file', { filename, vaultPath })
+    );
+    if (error) {
+      console.error(error);
+      setFailedToRead(true);
+      return;
+    }
+
+    const parsedRes = NoteSchema.parse(res);
+    setNote({ ...parsedRes });
 
     if (textAreaRef.current) {
-      textAreaRef.current.value = res?.content;
+      textAreaRef.current.value = parsedRes.content;
+      setFailedToRead(false);
     }
   }
 
+  // TODO: Add error handling if file fails to save
   async function saveFile(note: Note) {
     await invoke('save_file', { note });
     console.log(note.title + ' saved');
   }
 
+  // TODO: reduce useEffect spam
   useEffect(() => {
     console.log('loading first time');
-    if (!textAreaRef.current?.value) {
-      readFile('welcome');
-      console.log('loaded first time');
-    }
+    readFile('welcome');
+    console.log('loaded first time');
   }, []);
 
   useEffect(() => {
@@ -68,7 +79,9 @@ function App() {
         ...note,
         content: textAreaRef.current?.value || '',
       };
-      saveFile(updatenNote);
+      if (!failedToRead) {
+        saveFile(updatenNote);
+      }
       readFile(newNote.title);
     }
   }, [newNote]);
