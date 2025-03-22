@@ -47,6 +47,7 @@ fn new_md(new_file_name: &str, vault_path: String) -> Note {
 #[tauri::command]
 fn read_file(file_path: &str) -> Note {
     let clean_file_name = file_path.rsplitn(2, "/").next().unwrap().replace(".md", "");
+    println!("{}", file_path);
 
     match fs::read_to_string(&file_path) {
         Ok(contents) => Note {

@@ -67,6 +67,10 @@ export function SidebarFolder({
     setIsOpen((prev) => !prev);
   };
 
+  async function shitName(note: Note) {
+    setNewNote(note);
+  }
+
   return (
     <div className="w-full overflow-x-clip ">
       <button onClick={toggleFolder}>

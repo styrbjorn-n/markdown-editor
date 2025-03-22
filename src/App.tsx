@@ -30,21 +30,44 @@ function App() {
   let debouncedContent = useDebounce(content);
 
   async function readFile(filePath: string) {
-    const { data: res, error } = await tryCatch(
+    console.log('filePath', filePath);
+
+    const { data: opendNotes, error: opendNotesError } = await tryCatch(
+      store.get<{ value: string[] }>('lastNotesOpend')
+    );
+    const { data: readRes, error: readError } = await tryCatch(
       invoke('read_file', { filePath })
     );
-    if (error) {
-      console.error(error);
+    if (readError) {
+      console.error(readError);
       setFailedToRead(true);
       return;
     }
+    if (opendNotesError) {
+      console.error(readError);
+      return;
+    }
 
-    const parsedRes = NoteSchema.parse(res);
-    setNote({ ...parsedRes });
+    const parsedReadRes = NoteSchema.parse(readRes);
+    const parsedOpenedNotes = z.string().array().parse(opendNotes?.value);
 
     if (textAreaRef.current) {
-      textAreaRef.current.value = parsedRes.content;
+      textAreaRef.current.value = parsedReadRes.content;
       setFailedToRead(false);
+      setNote({ ...parsedReadRes });
+      if (parsedOpenedNotes[0] !== parsedReadRes.path) {
+        console.log('storing new setting');
+        await store.set('lastNotesOpend', {
+          value: [parsedReadRes.path, ...parsedOpenedNotes],
+        });
+        await store.save();
+      } else if (parsedOpenedNotes.includes(parsedReadRes.path)) {
+        const newArray = [parsedReadRes.path, ...parsedOpenedNotes];
+        const s = new Set(newArray);
+        await store.set('lastNotesOpend', {
+          value: [...s],
+        });
+      }
     }
   }
 
@@ -55,9 +78,22 @@ function App() {
   }
 
   async function loadFirstFile() {
-    const vaultPath = await store.get<{ value: String }>('notesVault');
-    const firstFile = vaultPath + '/' + 'welcome.md';
-    readFile(firstFile);
+    const vaultPath = await store.get<{ value: string }>('notesVault');
+    const lastNotesOpend = await store.get<{ value: string[] }>(
+      'lastNotesOpend'
+    );
+    if (!lastNotesOpend?.value) {
+      const firstFile = vaultPath + '/' + 'welcome.md';
+      readFile(firstFile);
+      await store.set('lastNotesOpend', { value: [firstFile] });
+      return;
+    }
+    console.log('notesArray: ', lastNotesOpend.value);
+
+    readFile(lastNotesOpend.value[0]);
+    // leaving this if the last loaded breaks again
+    // const firstFile = vaultPath + '/' + 'welcome.md';
+    // await store.set('lastNotesOpend', { value: [firstFile] });
   }
 
   // TODO: reduce useEffect spam
