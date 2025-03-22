@@ -25,12 +25,13 @@ function App() {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const [newNote, setNewNote] = useState<Note>();
   const [failedToRead, setFailedToRead] = useState(false);
-  let debouncedContent = useDebounce(textAreaRef.current?.value || '');
+  const isFirstRender = useRef(true);
+  const [content, setContent] = useState('');
+  let debouncedContent = useDebounce(content);
 
-  async function readFile(filename: string) {
-    const vaultPath = await store.get<{ value: String }>('notesVault');
+  async function readFile(filePath: string) {
     const { data: res, error } = await tryCatch(
-      invoke('read_file', { filename, vaultPath })
+      invoke('read_file', { filePath })
     );
     if (error) {
       console.error(error);
@@ -53,14 +54,23 @@ function App() {
     console.log(note.title + ' saved');
   }
 
+  async function loadFirstFile() {
+    const vaultPath = await store.get<{ value: String }>('notesVault');
+    const firstFile = vaultPath + '/' + 'welcome.md';
+    readFile(firstFile);
+  }
+
   // TODO: reduce useEffect spam
   useEffect(() => {
-    console.log('loading first time');
-    readFile('welcome');
-    console.log('loaded first time');
+    loadFirstFile();
   }, []);
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+
+      return;
+    }
     console.log('debounce effect triggerd');
 
     if (!note) {
@@ -70,9 +80,15 @@ function App() {
       const updatenNote = { ...note, content: debouncedContent };
       saveFile(updatenNote);
     }
-  }, [debouncedContent, textAreaRef.current?.value]);
+  }, [debouncedContent]);
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+
+      return;
+    }
+
     if (newNote && note) {
       console.log('new note:', newNote);
       const updatenNote = {
@@ -82,13 +98,9 @@ function App() {
       if (!failedToRead) {
         saveFile(updatenNote);
       }
-      readFile(newNote.title);
+      readFile(newNote.path);
     }
   }, [newNote]);
-
-  useEffect(() => {
-    console.log('Updated note: ', note);
-  }, [note]);
 
   return (
     <NoteContext.Provider value={{ note, setNote, newNote, setNewNote }}>
@@ -114,7 +126,8 @@ function App() {
                   defaultValue={note?.content}
                   onChange={(e) => {
                     if (textAreaRef.current) {
-                      textAreaRef.current.value = e.target.value; // Prevent re-renders - GPT
+                      console.log('trying to update the debounce');
+                      setContent(e.target.value);
                     }
                   }}
                 />

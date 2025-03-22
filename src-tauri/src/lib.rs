@@ -45,21 +45,20 @@ fn new_md(new_file_name: &str, vault_path: String) -> Note {
 }
 
 #[tauri::command]
-fn read_file(filename: &str, vault_path: String) -> Note {
-    let file_path = format!("{}/{}.md", vault_path, filename);
-    let clean_file_name = filename.rsplitn(2, "/").next().unwrap();
+fn read_file(file_path: &str) -> Note {
+    let clean_file_name = file_path.rsplitn(2, "/").next().unwrap().replace(".md", "");
 
     match fs::read_to_string(&file_path) {
         Ok(contents) => Note {
             title: clean_file_name.to_string(),
-            path: file_path,
+            path: file_path.to_string(),
             content: contents,
         },
         Err(err) => {
             println!("the file failed to load: {}", err);
             Note {
                 title: "".to_string(),
-                path: vault_path,
+                path: "".to_string(),
                 content: "".to_string(),
             }
         }
@@ -117,13 +116,8 @@ fn load_dir(dir: &Path, vault_path: String) -> Folder {
             };
             folder.sub_folders.push(sub_folder);
         } else if file_type.is_file() {
-            let filename = entry
-                .path()
-                .display()
-                .to_string()
-                .replace(vault_path.as_str(), "")
-                .replace(".md", "");
-            let note = read_file(filename.as_str(), vault_path.clone());
+            let file_path = entry.path().display().to_string();
+            let note = read_file(file_path.as_str());
             folder.notes.push(note);
         }
     }

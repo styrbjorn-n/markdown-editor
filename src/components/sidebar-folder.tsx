@@ -1,4 +1,5 @@
 import { Note, NoteSchema } from '@/App';
+import { useNoteContext } from '@/context/noteContext';
 import { tryCatch } from '@/lib/try-catch';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
@@ -27,6 +28,7 @@ export function SidebarFolder({
   const [subFolders, setSubFolders] = useState<SubFolder[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { setNewNote } = useNoteContext();
 
   async function getFolder() {
     const vaultPath = await store.get<{ value: String }>('notesVault');
@@ -78,7 +80,9 @@ export function SidebarFolder({
             );
           })}
           {notes.map((note, i) => (
-            <li key={note.path + i.toString()}>{note.title}</li>
+            <li key={note.path + i.toString()}>
+              <button onClick={() => setNewNote(note)}>{note.title}</button>
+            </li>
           ))}
         </ul>
       )}
