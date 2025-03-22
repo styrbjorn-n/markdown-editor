@@ -71,29 +71,7 @@ fn save_file(note: Note) {
 }
 
 #[tauri::command]
-fn get_vault_view(vault_path: String) -> Vec<Note> {
-    let mut vault_tree: Vec<Note> = Vec::new();
-    let to_replace = vault_path.clone() + "/";
-    let dir = Path::new(&vault_path);
-    visit_dirs(&dir, &mut |entry| {
-        let mut note_title = entry.path().display().to_string();
-        note_title = note_title
-            .replace(".md", "")
-            .replace(to_replace.as_str(), "");
-        vault_tree.push(Note {
-            title: note_title,
-            path: entry.path().display().to_string(),
-            content: "".to_string(),
-        });
-    })
-    .unwrap();
-    vault_tree.sort_by_key(|note| note.title.matches('/').count());
-
-    vault_tree
-}
-
-#[tauri::command]
-fn load_dir(dir: &Path, vault_path: String) -> Folder {
+fn load_dir(dir: &Path) -> Folder {
     let paths = fs::read_dir(dir).unwrap();
     let mut folder: Folder = Folder {
         notes: Vec::new(),
@@ -178,7 +156,6 @@ pub fn run() {
             read_file,
             save_file,
             get_search_res,
-            get_vault_view,
             load_dir
         ])
         .run(tauri::generate_context!())

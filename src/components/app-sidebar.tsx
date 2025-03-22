@@ -2,7 +2,7 @@ import { Sidebar, SidebarContent } from '@/components/ui/sidebar';
 import { invoke } from '@tauri-apps/api/core';
 
 import { Input } from './ui/input';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogClose,
@@ -14,14 +14,13 @@ import {
 } from './ui/dialog';
 import { Button } from './ui/button';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import { Note, NoteSchema } from '@/App';
+import { Note } from '@/App';
 import { useNoteContext } from '@/context/noteContext';
 import { SidebarFolder } from './sidebar-folder';
 
 export function AppSidebar() {
   const [newFileName, setNewFileName] = useState('');
   const [isNewFileOpen, setIsNewFileOpen] = useState(false);
-  const [Vault, setVault] = useState<Note[]>();
   const { setNewNote } = useNoteContext();
 
   async function newMd(newFileName: String) {
@@ -34,30 +33,7 @@ export function AppSidebar() {
     setNewNote(newMd);
     setIsNewFileOpen(false);
     setNewFileName('');
-    getVault();
   }
-
-  async function getVault() {
-    const store = new LazyStore('settings.json');
-    const vaultPath = await store.get<{ value: String }>('notesVault');
-    const res = await invoke('get_vault_view', { vaultPath });
-    const parsedRes = NoteSchema.array().safeParse(res);
-    if (parsedRes.success) {
-      setVault(parsedRes.data);
-      // console.log('vault yoiked');
-      // parsedRes.data.forEach((note) => {
-      // console.log(note.title);
-      // });
-    } else {
-      console.log(parsedRes.error);
-    }
-  }
-
-  useEffect(() => {
-    if (!Vault) {
-      getVault();
-    }
-  }, [Vault]);
 
   return (
     <Sidebar>
@@ -94,7 +70,6 @@ export function AppSidebar() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        {/* shit goes here */}
         <SidebarFolder />
       </SidebarContent>
     </Sidebar>

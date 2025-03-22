@@ -36,7 +36,7 @@ export function SidebarFolder({
     const dir = path ?? vaultPath;
 
     const { data: folderData, error } = await tryCatch(
-      invoke('load_dir', { dir, vaultPath })
+      invoke('load_dir', { dir })
     );
 
     if (error) {
@@ -59,6 +59,10 @@ export function SidebarFolder({
   const toggleFolder = () => {
     if (!isLoaded) {
       getFolder();
+    } else {
+      setIsLoaded(false);
+      setNotes([]);
+      setSubFolders([]);
     }
     setIsOpen((prev) => !prev);
   };
