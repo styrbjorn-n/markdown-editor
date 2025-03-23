@@ -62,8 +62,17 @@ function App() {
         });
         await store.save();
       } else if (parsedOpenedNotes.includes(parsedReadRes.path)) {
+        // this entire else if is ass and should be redone
         const newArray = [parsedReadRes.path, ...parsedOpenedNotes];
         const s = new Set(newArray);
+        const newValue = [...s];
+        if (newValue.length > 15) {
+          const trimmedNewValue = newValue.slice(14);
+          await store.set('lastNotesOpend', {
+            value: trimmedNewValue,
+          });
+          return;
+        }
         await store.set('lastNotesOpend', {
           value: [...s],
         });
