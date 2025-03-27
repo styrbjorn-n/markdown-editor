@@ -45,6 +45,13 @@ fn new_md(new_file_name: &str, vault_path: String) -> Note {
 }
 
 #[tauri::command]
+fn new_dir(new_dir_name: &str, vault_path: String) {
+    let new_dir_path = vault_path + "/" + new_dir_name;
+    println!("{}", new_dir_path);
+    fs::create_dir(new_dir_path).expect("Failed to create new dir");
+}
+
+#[tauri::command]
 fn read_file(file_path: &str) -> Note {
     let clean_file_name = file_path.rsplitn(2, "/").next().unwrap().replace(".md", "");
     // println!("{}", file_path);
@@ -154,6 +161,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             new_md,
+            new_dir,
             read_file,
             save_file,
             get_search_res,

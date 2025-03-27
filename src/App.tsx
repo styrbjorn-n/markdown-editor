@@ -29,6 +29,13 @@ function App() {
   const [content, setContent] = useState('');
   let debouncedContent = useDebounce(content);
 
+  async function getAllSettings() {
+    const store = new LazyStore('settings.json');
+    const settings = await store.entries();
+    const sObject = Object.fromEntries(settings);
+    console.log(sObject);
+  }
+
   async function readFile(filePath: string) {
     console.log('filePath', filePath);
 
@@ -48,8 +55,10 @@ function App() {
       return;
     }
 
+    console.log(opendNotes);
+
     const parsedReadRes = NoteSchema.parse(readRes);
-    const parsedOpenedNotes = z.string().array().parse(opendNotes?.value);
+    const parsedOpenedNotes = z.array(z.string()).parse(opendNotes);
 
     if (textAreaRef.current) {
       textAreaRef.current.value = parsedReadRes.content;
@@ -57,9 +66,10 @@ function App() {
       setNote({ ...parsedReadRes });
       if (parsedOpenedNotes[0] !== parsedReadRes.path) {
         console.log('storing new setting');
-        await store.set('lastNotesOpend', {
-          value: [parsedReadRes.path, ...parsedOpenedNotes],
-        });
+        await store.set('lastNotesOpend', [
+          parsedReadRes.path,
+          ...parsedOpenedNotes,
+        ]);
         await store.save();
       } else if (parsedOpenedNotes.includes(parsedReadRes.path)) {
         // this entire else if is ass and should be redone
@@ -68,9 +78,7 @@ function App() {
         const newValue = [...s];
         if (newValue.length > 15) {
           const trimmedNewValue = newValue.slice(14);
-          await store.set('lastNotesOpend', {
-            value: trimmedNewValue,
-          });
+          await store.set('lastNotesOpend', trimmedNewValue);
           return;
         }
         await store.set('lastNotesOpend', {
@@ -94,7 +102,6 @@ function App() {
     if (!lastNotesOpend?.value) {
       const firstFile = vaultPath + '/' + 'welcome.md';
       readFile(firstFile);
-      await store.set('lastNotesOpend', { value: [firstFile] });
       return;
     }
     console.log('notesArray: ', lastNotesOpend.value);
@@ -107,6 +114,7 @@ function App() {
 
   // TODO: reduce useEffect spam
   useEffect(() => {
+    getAllSettings();
     loadFirstFile();
   }, []);
 
