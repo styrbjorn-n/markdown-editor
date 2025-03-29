@@ -13,20 +13,20 @@ import {
   DialogTrigger,
 } from './ui/dialog';
 import { Button } from './ui/button';
-import { LazyStore } from '@tauri-apps/plugin-store';
 import { Note } from '@/App';
 import { useNoteContext } from '@/context/noteContext';
 import { SidebarFolder } from './sidebar-folder';
+import { useSettingsContext } from '@/context/settingsContext';
 
 export function AppSidebar() {
   const [newFileName, setNewFileName] = useState('');
   const [newDirectoryName, setNewDirectoryName] = useState('');
   const [isNewFileOpen, setIsNewFileOpen] = useState(false);
   const { setNewNote } = useNoteContext();
+  const { settings } = useSettingsContext();
 
   async function newMd(newFileName: string) {
-    const store = new LazyStore('settings.json');
-    const vaultPath = await store.get<{ value: string }>('notesVault');
+    const vaultPath = settings.notesVault;
 
     const newMd: Note = await invoke('new_md', { newFileName, vaultPath });
     console.log('New file: ', newMd);
@@ -37,11 +37,12 @@ export function AppSidebar() {
   }
 
   // this can wait. fix the exploding of data in welcome.md
-  async function newDir(dirName: string) {
-    const store = new LazyStore('settings.json');
-    const vaultPath = await store.get<{ value: string }>('notesVault');
-    console.log('new dir name: ', dirName);
-    await invoke('new_dir', { dirName, vaultPath });
+  async function newDir(newDirName: string) {
+    const vaultPath = settings.notesVault;
+    console.log('new dir name: ', newDirName);
+    await invoke('new_dir', { newDirName, vaultPath });
+    setIsNewFileOpen(false);
+    setNewDirectoryName('');
   }
 
   return (

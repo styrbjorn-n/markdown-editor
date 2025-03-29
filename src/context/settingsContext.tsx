@@ -1,34 +1,24 @@
-import { LazyStore } from '@tauri-apps/plugin-store';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, Dispatch, SetStateAction, useContext } from 'react';
+import { z } from 'zod';
 
-const store = new LazyStore('settings.json');
+export const settingsSchema = z.object({
+  notesVault: z.string(),
+  lastNotesOpend: z.array(z.string()),
+});
+export type SettingsType = z.infer<typeof settingsSchema>;
 
-const settingsConetext = createContext(null);
+export type SettingsContextType = {
+  settings: SettingsType;
+  setSettings: Dispatch<SetStateAction<SettingsType>>;
+};
 
-export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState({});
+export const parseSettings = (data: unknown) => {
+  return settingsSchema.safeParse(data);
+};
 
-  useEffect(() => {
-    async function loadSettings() {
-      const entries = await store.entries();
-      setSettings(Object.fromEntries(entries));
-    }
-    loadSettings();
-  }, []);
+export const SettingsContext = createContext<SettingsContextType>({
+  settings: { lastNotesOpend: [], notesVault: '' },
+  setSettings: () => {},
+});
 
-  const updateSettings = async (key, value) => {
-    await store.set(key, value);
-    await store.save();
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
-
-  return (
-    <settingsConetext.Provider value={{ settings, updateSettings }}>
-      {children}
-    </settingsConetext.Provider>
-  );
-}
-
-export function useSettings() {
-  return useContext(settingsConetext);
-}
+export const useSettingsContext = () => useContext(SettingsContext);
