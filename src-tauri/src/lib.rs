@@ -6,7 +6,7 @@ use std::{
     path::Path,
 };
 use tauri_plugin_store::StoreExt;
-use utils::visit_dirs;
+use utils::{levenshtein_distance, visit_dirs};
 mod utils;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -111,8 +111,8 @@ fn load_dir(dir: &Path) -> Folder {
     folder
 }
 
-#[tauri::command] // TODO: Remove underscore infront of search_term when implementing searching
-fn get_search_res(_search_term: String, vault_path: String) -> Vec<Note> {
+#[tauri::command]
+fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
     let mut vault_tree: Vec<Note> = Vec::new();
     let to_replace = vault_path.clone() + "/";
     let dir = Path::new(&vault_path);
@@ -128,6 +128,9 @@ fn get_search_res(_search_term: String, vault_path: String) -> Vec<Note> {
         });
     })
     .unwrap();
+
+    vault_tree.sort_by_key(|note| levenshtein_distance(&note.title.to_lowercase(), &search_term.to_lowercase()));
+
     return vault_tree;
 }
 

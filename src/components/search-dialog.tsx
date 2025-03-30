@@ -54,10 +54,7 @@ export function SearchDialog() {
             ).value
         );
 
-      console.log('pre', settings.lastNotesOpend);
-      console.log('post', successfulResults);
-
-      setSearchRes(successfulResults);
+      setSearchRes(successfulResults.slice(0, 15));
       return;
     }
 
