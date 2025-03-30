@@ -30,7 +30,7 @@ const defaultSettings: SettingsType = {
 };
 
 function App() {
-  const store = new LazyStore('settings.json');
+  const [storeInstance] = useState(() => new LazyStore('settings.json'));
   const [note, setNote] = useState<Note>();
   const [newNote, setNewNote] = useState<Note>();
   const [settings, setSettings] = useState<SettingsType>(defaultSettings);
@@ -40,99 +40,156 @@ function App() {
   const [content, setContent] = useState('');
   let debouncedContent = useDebounce(content);
 
+  async function updateLastOpenedNotes(notePath: string) {
+    // Get the current settings to ensure we have the latest data
+    const settingEntries = await storeInstance.entries();
+    const currentSettings = Object.fromEntries(settingEntries);
+    const cleanSettings = parseSettings(currentSettings);
+
+    if (cleanSettings.error) {
+      console.error('Error parsing settings:', cleanSettings.error);
+      return;
+    }
+
+    const currentLastNotesOpend = cleanSettings.data.lastNotesOpend || [];
+    const newHistory = Array.from(
+      new Set([notePath, ...currentLastNotesOpend])
+    ).slice(0, 50);
+
+    await storeInstance.set('lastNotesOpend', newHistory);
+    await storeInstance.save();
+
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      lastNotesOpend: newHistory,
+    }));
+
+    console.log('Updated history:', newHistory);
+  }
+
   async function readFile(filePath: string) {
-    const lastNotesOpend = settings.lastNotesOpend;
+    if (!filePath) {
+      console.error('No file path provided to readFile');
+      return;
+    }
 
     const { data: readRes, error: readError } = await tryCatch(
       invoke('read_file', { filePath })
     );
+
     if (readError) {
-      console.error(readError);
+      console.error('Error reading file:', readError);
       setFailedToRead(true);
       return;
     }
-    const parsedReadRes = NoteSchema.parse(readRes);
 
-    if (textAreaRef.current) {
-      textAreaRef.current.value = parsedReadRes.content;
-      setFailedToRead(false);
-      setNote({ ...parsedReadRes });
+    try {
+      const parsedReadRes = NoteSchema.parse(readRes);
 
-      const newHistory = new Set([parsedReadRes.path, ...lastNotesOpend]);
-      const limitedHistory = new Set([...newHistory].slice(0, 50));
+      if (textAreaRef.current) {
+        textAreaRef.current.value = parsedReadRes.content;
+        setContent(parsedReadRes.content);
+        setFailedToRead(false);
+        setNote({ ...parsedReadRes });
 
-      await store.set('lastNotesOpend', [...limitedHistory]);
-      setSettings({ ...settings, lastNotesOpend: [...limitedHistory] });
+        // Update the history with the current file path
+        await updateLastOpenedNotes(parsedReadRes.path);
+      }
+    } catch (error) {
+      console.error('Error parsing file content:', error);
+      setFailedToRead(true);
     }
   }
 
   // TODO: Add error handling if file fails to save
   async function saveFile(note: Note) {
-    await invoke('save_file', { note });
-    // console.log(note.title + ' saved');
+    if (!note) {
+      console.error('No note provided to saveFile');
+      return;
+    }
+
+    try {
+      await invoke('save_file', { note });
+      console.log(note.title + ' saved successfully');
+    } catch (error) {
+      console.error('Error saving file:', error);
+    }
   }
 
-  // TODO: reduce useEffect spam
   useEffect(() => {
     const loadAppConfig = async () => {
-      const store = new LazyStore('settings.json');
-      const settingEntries = await store.entries();
-      const sObject = Object.fromEntries(settingEntries);
+      try {
+        const settingEntries = await storeInstance.entries();
+        const sObject = Object.fromEntries(settingEntries);
 
-      console.log(sObject);
+        console.log('Loaded settings:', sObject);
 
-      const cleanSO = parseSettings(sObject);
+        const cleanSO = parseSettings(sObject);
 
-      if (cleanSO.error) {
-        console.log(cleanSO.error);
-        return;
+        if (cleanSO.error) {
+          console.error('Error parsing settings:', cleanSO.error);
+          return;
+        }
+
+        const loadedSettings = cleanSO.data;
+        setSettings(loadedSettings);
+
+        console.log('Parsed settings:', loadedSettings);
+
+        if (
+          loadedSettings.lastNotesOpend &&
+          loadedSettings.lastNotesOpend.length > 0
+        ) {
+          console.log(
+            'Loading most recent note:',
+            loadedSettings.lastNotesOpend[0]
+          );
+          // Use setTimeout to ensure settings state has updated before reading a file
+          setTimeout(() => {
+            readFile(loadedSettings.lastNotesOpend[0]);
+          }, 0);
+        }
+      } catch (error) {
+        console.error('Error loading app configuration:', error);
       }
-      const settings = cleanSO.data;
-      setSettings(settings);
-      console.log(settings);
-
-      if (!settings.lastNotesOpend || settings.lastNotesOpend.length < 1) {
-        return;
-      }
-
-      readFile(settings.lastNotesOpend[0]);
     };
+
     loadAppConfig();
   }, []);
 
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-
       return;
     }
-    // console.log('debounce effect triggerd');
 
     if (!note) {
-      // console.log('no notes open');
+      console.log('No notes open, skipping save');
     } else if (note.title !== '') {
-      // console.log('debounce note found');
-      const updatenNote = { ...note, content: debouncedContent };
-      saveFile(updatenNote);
+      console.log('Saving note with debounced content');
+      const updatedNote = { ...note, content: debouncedContent };
+      saveFile(updatedNote);
     }
   }, [debouncedContent]);
 
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
-
       return;
     }
 
-    if (newNote && note) {
-      // console.log('new note:', newNote);
-      const updatenNote = {
-        ...note,
-        content: textAreaRef.current?.value || '',
-      };
-      if (!failedToRead) {
-        saveFile(updatenNote);
+    if (newNote) {
+      console.log('New note selected:', newNote.path);
+
+      if (note && !failedToRead) {
+        // Save the current note before loading the new one
+        const updatedNote = {
+          ...note,
+          content: textAreaRef.current?.value || '',
+        };
+        saveFile(updatedNote);
       }
+
       readFile(newNote.path);
     }
   }, [newNote]);
@@ -143,15 +200,15 @@ function App() {
         <SidebarProvider>
           <AppSidebar />
           <main className="w-full">
-            <div className=" relative h-full w-full shrink flex flex-col item ">
+            <div className="relative h-full w-full shrink flex flex-col item">
               <SidebarTrigger />
               <SearchDialog />
-              <div className="w-full h-full flex justify-center ">
+              <div className="w-full h-full flex justify-center">
                 <div
                   className="w-full h-full max-w-[600px] relative mx-8
-        mb-4 border-t "
+                  mb-4 border-t"
                 >
-                  <p className="absolute top-[-1.5rem]  font-thin left-0">
+                  <p className="absolute top-[-1.5rem] font-thin left-0">
                     {note?.title
                       ? note.title.slice(note.title.lastIndexOf('/') + 1)
                       : 'filename'}
@@ -159,12 +216,9 @@ function App() {
                   <Textarea
                     className="resize-none"
                     ref={textAreaRef}
-                    defaultValue={note?.content}
+                    value={content}
                     onChange={(e) => {
-                      if (textAreaRef.current) {
-                        // console.log('trying to update the debounce');
-                        setContent(e.target.value);
-                      }
+                      setContent(e.target.value);
                     }}
                   />
                 </div>

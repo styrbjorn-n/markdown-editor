@@ -10,28 +10,61 @@ import { useOpenSearch } from '@/hooks/use-open-search';
 import { Note, NoteSchema } from '@/App';
 import { Input } from './ui/input';
 import { invoke } from '@tauri-apps/api/core';
-import { LazyStore } from '@tauri-apps/plugin-store';
 import { Button } from './ui/button';
 import { useNoteContext } from '@/context/noteContext';
+import { useSettingsContext } from '@/context/settingsContext';
+import { tryCatch } from '@/lib/try-catch';
 
 export function SearchDialog() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchRes, setSearchRes] = useState<Note[]>();
   const { setNewNote } = useNoteContext();
+  const { settings } = useSettingsContext();
 
   function toggleSearch(): void {
     setIsSearchOpen((prev) => !prev);
   }
 
   async function getSearchRes(searchTerm: String) {
-    const store = new LazyStore('settings.json');
-    const vaultPath = await store.get<{ value: String }>('notesVault');
+    const vaultPath = settings.notesVault;
+
+    if (searchTerm.length === 0) {
+      const res = await Promise.allSettled(
+        settings.lastNotesOpend.map(async (filePath) => {
+          const { data: readRes, error: readError } = await tryCatch(
+            invoke('read_file', { filePath })
+          );
+          if (readError) {
+            console.error(readError);
+            return;
+          }
+          return NoteSchema.parse(readRes);
+        })
+      );
+
+      const successfulResults = res
+        .filter((result) => result.status === 'fulfilled')
+        .map(
+          (result) =>
+            (
+              result as PromiseFulfilledResult<
+                ReturnType<typeof NoteSchema.parse>
+              >
+            ).value
+        );
+
+      console.log('pre', settings.lastNotesOpend);
+      console.log('post', successfulResults);
+
+      setSearchRes(successfulResults);
+      return;
+    }
 
     const res = await invoke('get_search_res', { searchTerm, vaultPath });
     const parsedRes = NoteSchema.array().safeParse(res);
     if (parsedRes.success) {
-      setSearchRes(parsedRes.data);
+      setSearchRes(parsedRes.data.slice(0, 15));
     } else {
       console.log(parsedRes.error);
     }
