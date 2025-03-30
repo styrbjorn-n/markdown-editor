@@ -65,5 +65,16 @@ pub fn levenshtein_distance(a: &str, b: &str) -> usize {
     }
 
     // The final edit distance is stored in the bottom-right cell of the matrix.
-    matrix[len_a][len_b]
+    // matrix[len_a][len_b]
+
+    if b.starts_with(&a) {
+        println!("{}: {}", &a, matrix[len_a][len_b] - 6);
+        return matrix[len_a][len_b] - 6;
+    } else if b.contains(&a) {
+        println!("{}: {}", &a, matrix[len_a][len_b] - 4);
+        return matrix[len_a][len_b] - 4;
+    } else {
+        println!("{}: {}", &a, matrix[len_a][len_b]);
+        return matrix[len_a][len_b];
+    }
 }
