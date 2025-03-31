@@ -18,16 +18,16 @@ pub fn visit_dirs(dir: &Path, cb: &mut dyn FnMut(&DirEntry)) -> io::Result<()> {
     Ok(())
 }
 
-pub fn levenshtein_distance(a: &str, b: &str) -> usize {
+pub fn levenshtein_distance(a: &str, b: &str) -> f64 {
     let len_a = a.len();
     let len_b = b.len();
 
     // If one of the strings is empty, the distance is the length of the other string.
     if len_a == 0 {
-        return len_b;
+        return len_b as f64;
     }
     if len_b == 0 {
-        return len_a;
+        return len_a as f64;
     }
 
     // Create a 2D matrix initialized with zeroes.
@@ -67,14 +67,13 @@ pub fn levenshtein_distance(a: &str, b: &str) -> usize {
     // The final edit distance is stored in the bottom-right cell of the matrix.
     // matrix[len_a][len_b]
 
-    if b.starts_with(&a) {
-        println!("{}: {}", &a, matrix[len_a][len_b] - 6);
-        return matrix[len_a][len_b] - 6;
-    } else if b.contains(&a) {
-        println!("{}: {}", &a, matrix[len_a][len_b] - 4);
-        return matrix[len_a][len_b] - 4;
+    if a.starts_with(&b) {
+        let val = (matrix[len_a][len_b] as f64).sqrt().log10();
+        return val;
+    } else if a.contains(&b) {
+        let val = (matrix[len_a][len_b] as f64).log10();
+        return val;
     } else {
-        println!("{}: {}", &a, matrix[len_a][len_b]);
-        return matrix[len_a][len_b];
+        return matrix[len_a][len_b] as f64;
     }
 }

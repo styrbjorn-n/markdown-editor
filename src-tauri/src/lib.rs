@@ -129,7 +129,14 @@ fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
     })
     .unwrap();
 
-    vault_tree.sort_by_key(|note| levenshtein_distance(&note.title.to_lowercase(), &search_term.to_lowercase()));
+    vault_tree.sort_by(|a, b| {
+        let dist_a = levenshtein_distance(&a.title.to_lowercase(), &search_term.to_lowercase());
+        let dist_b = levenshtein_distance(&b.title.to_lowercase(), &search_term.to_lowercase());
+
+        dist_a
+            .partial_cmp(&dist_b)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     return vault_tree;
 }
