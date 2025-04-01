@@ -3,7 +3,7 @@ import { useNoteContext } from '@/context/noteContext';
 import { tryCatch } from '@/lib/try-catch';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 export function SidebarFolder({
@@ -67,16 +67,48 @@ export function SidebarFolder({
     setIsOpen((prev) => !prev);
   };
 
-  async function shitName(note: Note) {
-    setNewNote(note);
+  useEffect(() => {
+    if (!path) {
+      getFolder();
+    }
+  }, [path]);
+
+  if (!path) {
+    return (
+      <div className="w-full overflow-x-clip ">
+        {(subFolders.length || notes.length) && (
+          <ul className="ml-3">
+            {subFolders.map((subFolder, i) => {
+              return (
+                <SidebarFolder
+                  key={subFolder.folderName + i.toString()}
+                  path={subFolder.folderPath}
+                  folderName={subFolder.folderName}
+                />
+              );
+            })}
+            {notes.map((note, i) => (
+              <li key={note.path + i.toString()}>
+                <button onClick={() => setNewNote(note)}>{note.title}</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="w-full overflow-x-clip ">
       <button onClick={toggleFolder}>
-        {isOpen ? 'v' : '>'} {folderName || 'vault'}
+        {isOpen ? (
+          <span className="opacity-45">v </span>
+        ) : (
+          <span className="opacity-45">&gt; </span>
+        )}
+        {folderName}
       </button>
-      {isOpen && (subFolders.length || notes.length) && (
+      {isOpen && (
         <ul className="ml-3">
           {subFolders.map((subFolder, i) => {
             return (
