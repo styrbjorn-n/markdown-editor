@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import SidebarFile from './sidebar-file';
 
 export function SidebarFolder({
   path,
@@ -88,9 +89,7 @@ export function SidebarFolder({
               );
             })}
             {notes.map((note, i) => (
-              <li key={note.path + i.toString()}>
-                <button onClick={() => setNewNote(note)}>{note.title}</button>
-              </li>
+              <SidebarFile key={note.title + i} note={note}></SidebarFile>
             ))}
           </ul>
         )}

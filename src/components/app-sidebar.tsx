@@ -1,6 +1,5 @@
 import { Sidebar, SidebarContent } from '@/components/ui/sidebar';
 import { invoke } from '@tauri-apps/api/core';
-
 import { Input } from './ui/input';
 import { useState } from 'react';
 import {
