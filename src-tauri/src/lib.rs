@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     env,
+    fmt::format,
     fs::{self, File},
     path::Path,
 };
@@ -141,6 +142,27 @@ fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
     return vault_tree;
 }
 
+#[tauri::command]
+fn rename_file(file_path: String, new_name: String) {
+    let og_file_contents =
+        fs::read_to_string(&file_path).expect("failed to load file contents for renaming");
+
+    let new_path = file_path.rsplitn(2, "/").nth(1).unwrap_or("");
+
+    if new_path != "" {
+        let new_full_path = format!("{}/{}.md", new_path, new_name);
+        File::create(&new_full_path).expect("failed to create new file when renaming");
+        fs::write(new_full_path, og_file_contents)
+            .expect("failed to write to new file when renaming");
+        fs::remove_file(file_path).expect("failed to remove old file when renaming");
+    }
+}
+
+#[tauri::command]
+fn delete_file(file_path: String) {
+    fs::remove_file(file_path).expect("failed to remove file")
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -175,7 +197,9 @@ pub fn run() {
             read_file,
             save_file,
             get_search_res,
-            load_dir
+            load_dir,
+            rename_file,
+            delete_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

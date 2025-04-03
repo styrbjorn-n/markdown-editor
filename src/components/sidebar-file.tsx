@@ -8,9 +8,21 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from './ui/context-menu';
+import { invoke } from '@tauri-apps/api/core';
 
 export default function SidebarFile({ note }: { note: Note }) {
   const { setNewNote } = useNoteContext();
+
+  const handleRename = async (filePath: string, newName: string) => {
+    console.log('renaming file');
+
+    // await invoke('rename_file', { filePath, newName });
+  };
+
+  const handleDelete = async (filePath: string) => {
+    // re enable when reload on event is implemented
+    // await invoke('delete_file', { filePath });
+  };
 
   return (
     <li className="hover:cursor-pointer">
@@ -22,8 +34,12 @@ export default function SidebarFile({ note }: { note: Note }) {
           <ContextMenuLabel>{note.title}</ContextMenuLabel>
           <ContextMenuSeparator />
           {/* add the fucntions to rename and delete */}
-          <ContextMenuItem>Rename</ContextMenuItem>
-          <ContextMenuItem>Delete</ContextMenuItem>
+          <ContextMenuItem onClick={() => handleRename(note.path, '')}>
+            Rename
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => handleDelete(note.path)}>
+            Delete
+          </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
     </li>
