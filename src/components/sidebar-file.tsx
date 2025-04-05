@@ -9,20 +9,60 @@ import {
   ContextMenuTrigger,
 } from './ui/context-menu';
 import { invoke } from '@tauri-apps/api/core';
+import { useSidebarContext } from '@/context/sidebarContext';
+import { useEffect, useRef, useState } from 'react';
 
 export default function SidebarFile({ note }: { note: Note }) {
+  const [isrenameOpen, setIsRenameOpen] = useState(false);
+  const [newFileName, setNewFileName] = useState(note.title);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { setNewNote } = useNoteContext();
+  const { setEvent } = useSidebarContext();
 
   const handleRename = async (filePath: string, newName: string) => {
     console.log('renaming file');
 
-    // await invoke('rename_file', { filePath, newName });
+    await invoke('rename_file', { filePath, newName });
+    setEvent(true);
+    setIsRenameOpen(false);
   };
 
   const handleDelete = async (filePath: string) => {
-    // re enable when reload on event is implemented
-    // await invoke('delete_file', { filePath });
+    await invoke('delete_file', { filePath });
+    setEvent(true);
   };
+
+  const handleUnfocus = () => {
+    setIsRenameOpen(false);
+    setNewFileName(note.title);
+  };
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isrenameOpen]);
+
+  if (isrenameOpen) {
+    return (
+      <li>
+        <form
+          onSubmit={() => {
+            handleRename(note.path, newFileName);
+          }}
+        >
+          <input
+            className="bg-transparent"
+            ref={inputRef}
+            type="text"
+            value={newFileName}
+            onChange={(e) => setNewFileName(e.target.value)}
+            onBlur={() => handleUnfocus()}
+          />
+        </form>
+      </li>
+    );
+  }
 
   return (
     <li className="hover:cursor-pointer">
@@ -34,7 +74,7 @@ export default function SidebarFile({ note }: { note: Note }) {
           <ContextMenuLabel>{note.title}</ContextMenuLabel>
           <ContextMenuSeparator />
           {/* add the fucntions to rename and delete */}
-          <ContextMenuItem onClick={() => handleRename(note.path, '')}>
+          <ContextMenuItem onClick={() => setIsRenameOpen(true)}>
             Rename
           </ContextMenuItem>
           <ContextMenuItem onClick={() => handleDelete(note.path)}>

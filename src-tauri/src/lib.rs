@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
     env,
-    fmt::format,
     fs::{self, File},
     path::Path,
 };
@@ -144,8 +143,13 @@ fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
 
 #[tauri::command]
 fn rename_file(file_path: String, new_name: String) {
+    println!("{}", file_path);
+    if !Path::new(&file_path).exists() {
+        return;
+    }
+
     let og_file_contents =
-        fs::read_to_string(&file_path).expect("failed to load file contents for renaming");
+        fs::read_to_string(&file_path).expect("failed to load file contents for renaming"); // this is were it fails to read the file
 
     let new_path = file_path.rsplitn(2, "/").nth(1).unwrap_or("");
 

@@ -6,6 +6,7 @@ import { LazyStore } from '@tauri-apps/plugin-store';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import SidebarFile from './sidebar-file';
+import { useSidebarContext } from '@/context/sidebarContext';
 
 export function SidebarFolder({
   path,
@@ -30,6 +31,7 @@ export function SidebarFolder({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const { setNewNote } = useNoteContext();
+  const { event } = useSidebarContext();
 
   async function getFolder() {
     const vaultPath = await store.get<{ value: String }>('notesVault');
@@ -74,6 +76,12 @@ export function SidebarFolder({
     }
   }, [path]);
 
+  useEffect(() => {
+    if (event && isLoaded) {
+      getFolder();
+    }
+  }, [event]);
+
   if (!path) {
     return (
       <div className="w-full overflow-x-clip ">
@@ -89,7 +97,7 @@ export function SidebarFolder({
               );
             })}
             {notes.map((note, i) => (
-              <SidebarFile key={note.title + i} note={note}></SidebarFile>
+              <SidebarFile key={note.title + i} note={note} />
             ))}
           </ul>
         )}
