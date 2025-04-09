@@ -3,6 +3,7 @@ use serde_json::json;
 use std::{
     env,
     fs::{self, File},
+    io::read_to_string,
     path::Path,
 };
 use tauri_plugin_store::StoreExt;
@@ -52,16 +53,24 @@ fn new_dir(new_dir_name: &str, vault_path: String) {
 }
 
 #[tauri::command]
-fn read_file(file_path: &str) -> Note {
+fn read_file(file_path: &str, with_content_return: Option<bool>) -> Note {
     let clean_file_name = file_path.rsplitn(2, "/").next().unwrap().replace(".md", "");
-    // println!("{}", file_path);
+    // println!("file path: {}", file_path);
+    // println!("return content {}", with_content_return.unwrap());
 
     match fs::read_to_string(&file_path) {
-        Ok(contents) => Note {
-            title: clean_file_name.to_string(),
-            path: file_path.to_string(),
-            content: contents,
-        },
+        Ok(contents) => {
+            let contents = if with_content_return.unwrap() {
+                contents
+            } else {
+                "".to_string()
+            };
+            Note {
+                title: clean_file_name.to_string(),
+                path: file_path.to_string(),
+                content: contents,
+            }
+        }
         Err(err) => {
             println!("the file failed to load: {}", err);
             Note {
@@ -103,7 +112,7 @@ fn load_dir(dir: &Path) -> Folder {
             folder.sub_folders.push(sub_folder);
         } else if file_type.is_file() {
             let file_path = entry.path().display().to_string();
-            let note = read_file(file_path.as_str());
+            let note = read_file(file_path.as_str(), Some(false));
             folder.notes.push(note);
         }
     }
@@ -143,7 +152,6 @@ fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
 
 #[tauri::command]
 fn rename_file(file_path: String, new_name: String) {
-    println!("{}", file_path);
     if !Path::new(&file_path).exists() {
         return;
     }
@@ -165,6 +173,47 @@ fn rename_file(file_path: String, new_name: String) {
 #[tauri::command]
 fn delete_file(file_path: String) {
     fs::remove_file(file_path).expect("failed to remove file")
+}
+
+#[tauri::command]
+fn rename_folder(folder_path: String, new_name: String) {
+    if !Path::new(&folder_path).exists() || new_name == "" {
+        return;
+    }
+
+    let new_base_path = format!(
+        "{}/{}",
+        folder_path.rsplitn(2, "/").nth(1).unwrap_or(""),
+        new_name
+    );
+
+    let mut dir_tree: Vec<String> = Vec::new();
+    let dir = Path::new(&folder_path);
+    visit_dirs(&dir, &mut |entry| {
+        dir_tree.push(entry.path().display().to_string());
+    })
+    .unwrap();
+
+    dir_tree.sort_by_key(|s| s.matches("/").count());
+
+    for path in dir_tree {
+        let failed_to_read_message =
+            format!("failed to read file before renaming folder: {}", &path);
+        let path_content = fs::read_to_string(&path).expect(failed_to_read_message.as_str());
+
+        let new_file_path = path.replace(&folder_path, &new_base_path);
+        fs::create_dir_all(&new_file_path.rsplitn(2, "/").nth(1).unwrap_or(""))
+            .expect("failed to create all folders before renaming folder");
+        File::create(&new_file_path).expect("failed to create copy of file when renmaing folder");
+        fs::write(new_file_path, path_content)
+            .expect("failed to write to new file when renaming folder");
+    }
+    fs::remove_dir_all(folder_path).expect("failed to remove old dir when renaming folder");
+}
+
+#[tauri::command]
+fn delete_folder(folder_path: String) {
+    fs::remove_dir_all(folder_path).expect("failed to remove file")
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -203,7 +252,9 @@ pub fn run() {
             get_search_res,
             load_dir,
             rename_file,
-            delete_file
+            delete_file,
+            rename_folder,
+            delete_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -37,6 +37,7 @@ export function SidebarFolder({
     const vaultPath = await store.get<{ value: String }>('notesVault');
 
     const dir = path ?? vaultPath;
+    console.log(dir);
 
     const { data: folderData, error } = await tryCatch(
       invoke('load_dir', { dir })

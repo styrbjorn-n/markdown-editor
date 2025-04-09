@@ -66,6 +66,7 @@ function App() {
 
     console.log('Updated history:', newHistory);
   }
+  
 
   async function readFile(filePath: string) {
     if (!filePath) {
@@ -74,7 +75,7 @@ function App() {
     }
 
     const { data: readRes, error: readError } = await tryCatch(
-      invoke('read_file', { filePath })
+      invoke('read_file', { filePath, withContentReturn: true })
     );
 
     if (readError) {

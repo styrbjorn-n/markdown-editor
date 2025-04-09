@@ -33,7 +33,7 @@ export function SearchDialog() {
       const res = await Promise.allSettled(
         settings.lastNotesOpend.map(async (filePath) => {
           const { data: readRes, error: readError } = await tryCatch(
-            invoke('read_file', { filePath })
+            invoke('read_file', { filePath, withContentReturn: false })
           );
           if (readError) {
             console.error(readError);
