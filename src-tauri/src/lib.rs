@@ -3,7 +3,6 @@ use serde_json::json;
 use std::{
     env,
     fs::{self, File},
-    io::read_to_string,
     path::Path,
 };
 use tauri_plugin_store::StoreExt;
@@ -195,6 +194,8 @@ fn rename_folder(folder_path: String, new_name: String) {
     .unwrap();
 
     dir_tree.sort_by_key(|s| s.matches("/").count());
+
+    fs::create_dir(&new_base_path).expect("failed to create new dir for renaming");
 
     for path in dir_tree {
         let failed_to_read_message =

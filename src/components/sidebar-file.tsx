@@ -73,7 +73,6 @@ export default function SidebarFile({ note }: { note: Note }) {
         <ContextMenuContent>
           <ContextMenuLabel>{note.title}</ContextMenuLabel>
           <ContextMenuSeparator />
-          {/* add the fucntions to rename and delete */}
           <ContextMenuItem onClick={() => setIsRenameOpen(true)}>
             Rename
           </ContextMenuItem>

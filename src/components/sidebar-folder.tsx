@@ -3,16 +3,24 @@ import { useNoteContext } from '@/context/noteContext';
 import { tryCatch } from '@/lib/try-catch';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import SidebarFile from './sidebar-file';
 import { useSidebarContext } from '@/context/sidebarContext';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from './ui/context-menu';
+import { ContextMenuItem } from '@radix-ui/react-context-menu';
 
 export function SidebarFolder({
   path,
   folderName,
 }: {
-  path?: String;
+  path?: string;
   folderName?: string;
 }) {
   const subFolderSchema = z.object({
@@ -30,8 +38,11 @@ export function SidebarFolder({
   const [subFolders, setSubFolders] = useState<SubFolder[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isrenameOpen, setIsRenameOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState(folderName || '');
+  const inputRef = useRef<HTMLInputElement>(null);
   const { setNewNote } = useNoteContext();
-  const { event } = useSidebarContext();
+  const { event, setEvent } = useSidebarContext();
 
   async function getFolder() {
     const vaultPath = await store.get<{ value: String }>('notesVault');
@@ -71,6 +82,32 @@ export function SidebarFolder({
     setIsOpen((prev) => !prev);
   };
 
+  const handleDelete = async (folderPath: string) => {
+    //add check if there are folders or files in folder, if true
+    //open "ARE YOU SURE" dialog, where user can decide if nuke or not
+    await invoke('delete_folder', { folderPath });
+    setEvent(true);
+  };
+
+  const handleRename = async (folderPath: string, newName: string) => {
+    console.log('renaming folder');
+
+    await invoke('rename_folder', { folderPath, newName });
+    setEvent(true);
+    setIsRenameOpen(false);
+  };
+
+  const handleUnfocus = () => {
+    setIsRenameOpen(false);
+    setNewFolderName(folderName || '');
+  };
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isrenameOpen]);
+
   useEffect(() => {
     if (!path) {
       getFolder();
@@ -105,35 +142,90 @@ export function SidebarFolder({
       </div>
     );
   }
+  if (isrenameOpen && path) {
+    return (
+      <div className="w-full overflow-x-clip">
+        <div className="flex gap-1">
+          {isOpen ? (
+            <span className="opacity-45">v </span>
+          ) : (
+            <span className="opacity-45">&gt; </span>
+          )}
+          <form
+            onSubmit={() => {
+              handleRename(path, newFolderName);
+            }}
+          >
+            <input
+              className="bg-transparent"
+              ref={inputRef}
+              type="text"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onBlur={() => handleUnfocus()}
+            />
+          </form>
+        </div>
+        {isOpen && (
+          <ul className="ml-3">
+            {subFolders.map((subFolder, i) => {
+              return (
+                <SidebarFolder
+                  key={subFolder.folderName + i.toString()}
+                  path={subFolder.folderPath}
+                  folderName={subFolder.folderName}
+                />
+              );
+            })}
+            {notes.map((note, i) => (
+              <li key={note.path + i.toString()}>{note.title}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full overflow-x-clip ">
-      <button onClick={toggleFolder}>
-        {isOpen ? (
-          <span className="opacity-45">v </span>
-        ) : (
-          <span className="opacity-45">&gt; </span>
+    <ContextMenu>
+      <div className="w-full overflow-x-clip">
+        <ContextMenuTrigger onClick={toggleFolder}>
+          {isOpen ? (
+            <span className="opacity-45">v </span>
+          ) : (
+            <span className="opacity-45">&gt; </span>
+          )}
+          {folderName}
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuLabel>{folderName}</ContextMenuLabel>
+          <ContextMenuSeparator />
+          <ContextMenuItem onClick={() => setIsRenameOpen(true)}>
+            Rename
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => handleDelete(path)}>
+            delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+        {isOpen && (
+          <ul className="ml-3">
+            {subFolders.map((subFolder, i) => {
+              return (
+                <SidebarFolder
+                  key={subFolder.folderName + i.toString()}
+                  path={subFolder.folderPath}
+                  folderName={subFolder.folderName}
+                />
+              );
+            })}
+            {notes.map((note, i) => (
+              <li key={note.path + i.toString()}>
+                <button onClick={() => setNewNote(note)}>{note.title}</button>
+              </li>
+            ))}
+          </ul>
         )}
-        {folderName}
-      </button>
-      {isOpen && (
-        <ul className="ml-3">
-          {subFolders.map((subFolder, i) => {
-            return (
-              <SidebarFolder
-                key={subFolder.folderName + i.toString()}
-                path={subFolder.folderPath}
-                folderName={subFolder.folderName}
-              />
-            );
-          })}
-          {notes.map((note, i) => (
-            <li key={note.path + i.toString()}>
-              <button onClick={() => setNewNote(note)}>{note.title}</button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      </div>
+    </ContextMenu>
   );
 }
