@@ -33,6 +33,8 @@ struct Folder {
 
 #[tauri::command]
 fn new_md(new_file_name: &str, vault_path: String) -> Note {
+    // creates a new markdown file and returns the new file as a Note to the frontend
+
     let new_file: String = vault_path.clone() + "/" + &new_file_name + ".md";
     File::create(&new_file).expect("failed to create new note");
 
@@ -47,15 +49,14 @@ fn new_md(new_file_name: &str, vault_path: String) -> Note {
 #[tauri::command]
 fn new_dir(new_dir_name: &str, vault_path: String) {
     let new_dir_path = vault_path + "/" + new_dir_name;
-    println!("{}", new_dir_path);
     fs::create_dir(new_dir_path).expect("Failed to create new dir");
 }
 
 #[tauri::command]
 fn read_file(file_path: &str, with_content_return: Option<bool>) -> Note {
+    // reads the given file and returns it in Note format to the frontend
+    // can opt in or out of getting the text content returned
     let clean_file_name = file_path.rsplitn(2, "/").next().unwrap().replace(".md", "");
-    // println!("file path: {}", file_path);
-    // println!("return content {}", with_content_return.unwrap());
 
     match fs::read_to_string(&file_path) {
         Ok(contents) => {
@@ -88,6 +89,9 @@ fn save_file(note: Note) {
 
 #[tauri::command]
 fn load_dir(dir: &Path) -> Folder {
+    // returns the files and folders inside the given folder
+    // only called when clicking on the name of a folder or when a re render event is triggerd in the frontend
+
     let paths = fs::read_dir(dir).unwrap();
     let mut folder: Folder = Folder {
         notes: Vec::new(),
@@ -121,6 +125,8 @@ fn load_dir(dir: &Path) -> Folder {
 
 #[tauri::command]
 fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
+    // returns a array of all notes (markdown files) in the "vault" sorted based on their levenshtein distance
+
     let mut vault_tree: Vec<Note> = Vec::new();
     let to_replace = vault_path.clone() + "/";
     let dir = Path::new(&vault_path);
@@ -151,6 +157,9 @@ fn get_search_res(search_term: String, vault_path: String) -> Vec<Note> {
 
 #[tauri::command]
 fn rename_file(file_path: String, new_name: String) {
+    // renames the a file based on the path provided and the new name.
+    // copies the data from the first file before creating a new and writing said data to it before removing the original
+
     if !Path::new(&file_path).exists() {
         return;
     }
@@ -176,6 +185,13 @@ fn delete_file(file_path: String) {
 
 #[tauri::command]
 fn rename_folder(folder_path: String, new_name: String) {
+    // gets all files form the folder about to be renamed in to a Vec ( array for dummies like me )
+    // sorts them based on how many "/" each string has ( not really nessasary i think )
+    // creates the folder with its new name at the same loaction
+    // loops over all the file paths. reading thier contects, then creates the all the dirs missing from it desierd path
+    // before creating the the file in its new loaction and writing the contents to it
+    // when the loop is done removes the original folder and ALL FILES AND FOLDERS INSIDE OF IT
+
     if !Path::new(&folder_path).exists() || new_name == "" {
         return;
     }
@@ -219,6 +235,7 @@ fn delete_folder(folder_path: String) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // the main tauri run function ( dont really know how it works )
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -228,6 +245,7 @@ pub fn run() {
 
             match notes_vault {
                 None => {
+                    // this whole working path nonsens should be replaced with a selection / create new "vault" screen
                     let mut working_path = env::current_dir()
                         .expect("could not get path")
                         .into_os_string()
