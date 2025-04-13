@@ -1,7 +1,7 @@
 import { Sidebar, SidebarContent } from '@/components/ui/sidebar';
 import { invoke } from '@tauri-apps/api/core';
 import { Input } from './ui/input';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogClose,
@@ -27,11 +27,12 @@ export function AppSidebar() {
   const [event, setEvent] = useState(false);
   const { setNewNote } = useNoteContext();
   const { settings } = useSettingsContext();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function newMd(newFileName: string) {
-    const vaultPath = settings.notesVault;
+    const folderPath = settings.notesVault;
 
-    const newMd: Note = await invoke('new_md', { newFileName, vaultPath });
+    const newMd: Note = await invoke('new_md', { newFileName, folderPath });
     console.log('New file: ', newMd);
 
     setNewNote(newMd);
@@ -40,15 +41,19 @@ export function AppSidebar() {
     setEvent(true);
   }
 
-  // this can wait. fix the exploding of data in welcome.md
-  async function newDir(newDirName: string) {
-    const vaultPath = settings.notesVault;
+  async function newDir(newDirName: string, parentDirPath: string) {
     console.log('new dir name: ', newDirName);
-    await invoke('new_dir', { newDirName, vaultPath });
+    await invoke('new_dir', { newDirName, parentDirPath });
     setIsNewDirOpen(false);
     setNewDirectoryName('');
     setEvent(true);
   }
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isNewDirOpen, isNewFileOpen]);
 
   useEffect(() => {
     if (event === true) {
@@ -63,76 +68,54 @@ export function AppSidebar() {
       <SidebarContext.Provider value={{ event, setEvent }}>
         <SidebarContent className="p-4">
           <div className="flex gap-1 items-center">
-            <Dialog open={isNewFileOpen} onOpenChange={setIsNewFileOpen}>
-              <DialogTrigger className="h-6 w-6 hover:bg-accent hover:text-accent-foreground flex items-center justify-center rounded">
-                <FilePlus className="h-4 w-4" />
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>New Document</DialogTitle>
-                </DialogHeader>
-                <Input
-                  placeholder="Document Name"
-                  onChange={(event) => setNewFileName(event.target.value)}
-                  value={newFileName}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newFileName) {
-                      newMd(newFileName);
-                    }
-                  }}
-                />
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant={'secondary'}>
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button
-                    type="submit"
-                    disabled={!newFileName}
-                    onClick={() => newMd(newFileName)}
-                  >
-                    Create File
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            <Dialog open={isNewDirOpen} onOpenChange={setIsNewDirOpen}>
-              <DialogTrigger className="h-6 w-6 hover:bg-accent hover:text-accent-foreground flex items-center justify-center rounded">
-                <FolderPlus className="h-4 w-4" />
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>new Directory</DialogTitle>
-                </DialogHeader>
-                <Input
-                  placeholder="Directory Name"
-                  onChange={(event) => setNewDirectoryName(event.target.value)}
-                  value={newDirectoryName}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newDirectoryName) {
-                      newDir(newDirectoryName);
-                    }
-                  }}
-                />
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant={'secondary'}>
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button
-                    type="submit"
-                    disabled={!newDirectoryName}
-                    onClick={() => newDir(newDirectoryName)}
-                  >
-                    Create Directory
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button
+              variant={'ghost'}
+              size={'sm'}
+              onClick={() => setIsNewFileOpen(true)}
+              // className="h-6 w-6 hover:bg-accent hover:text-accent-foreground flex items-center justify-center rounded"
+            >
+              <FilePlus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={'ghost'}
+              size={'sm'}
+              onClick={() => setIsNewDirOpen(true)}
+              // className="h-6 w-6 hover:bg-accent hover:text-accent-foreground flex items-center justify-center rounded"
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
           </div>
+          {isNewDirOpen && (
+            <form>
+              <input
+                type="text"
+                ref={inputRef}
+                className="bg-transparent"
+                value={newDirectoryName}
+                onChange={(e) => setNewDirectoryName(e.target.value)}
+                onBlur={() => {
+                  setIsNewDirOpen(false);
+                  setNewDirectoryName('');
+                }}
+              />
+            </form>
+          )}
           <SidebarFolder />
+          {isNewFileOpen && (
+            <form>
+              <input
+                type="text"
+                ref={inputRef}
+                className="bg-transparent"
+                value={newFileName}
+                onChange={(e) => setNewFileName(e.target.value)}
+                onBlur={() => {
+                  setIsNewFileOpen(false);
+                  setNewFileName('');
+                }}
+              />
+            </form>
+          )}
         </SidebarContent>
       </SidebarContext.Provider>
     </Sidebar>

@@ -32,10 +32,10 @@ struct Folder {
 }
 
 #[tauri::command]
-fn new_md(new_file_name: &str, vault_path: String) -> Note {
+fn new_md(new_file_name: &str, folder_path: String) -> Note {
     // creates a new markdown file and returns the new file as a Note to the frontend
 
-    let new_file: String = vault_path.clone() + "/" + &new_file_name + ".md";
+    let new_file: String = folder_path.clone() + "/" + &new_file_name + ".md";
     File::create(&new_file).expect("failed to create new note");
 
     let new_note = Note {
@@ -47,8 +47,8 @@ fn new_md(new_file_name: &str, vault_path: String) -> Note {
 }
 
 #[tauri::command]
-fn new_dir(new_dir_name: &str, vault_path: String) {
-    let new_dir_path = vault_path + "/" + new_dir_name;
+fn new_dir(new_dir_name: &str, parent_dir_path: String) {
+    let new_dir_path = format!("{}/{}", parent_dir_path, new_dir_name);
     fs::create_dir(new_dir_path).expect("Failed to create new dir");
 }
 

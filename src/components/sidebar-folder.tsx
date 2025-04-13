@@ -15,6 +15,7 @@ import {
   ContextMenuTrigger,
 } from './ui/context-menu';
 import { ContextMenuItem } from '@radix-ui/react-context-menu';
+import { useSettingsContext } from '@/context/settingsContext';
 
 export function SidebarFolder({
   path,
@@ -39,10 +40,15 @@ export function SidebarFolder({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isrenameOpen, setIsRenameOpen] = useState(false);
+  const [isNewDirOpen, setIsNewDirOpen] = useState(false);
+  const [NewDir, setNewDir] = useState('');
+  const [isNewMdOpen, setIsNewMdOpen] = useState(false);
+  const [newMdName, setNewMdName] = useState('');
   const [newFolderName, setNewFolderName] = useState(folderName || '');
   const inputRef = useRef<HTMLInputElement>(null);
   const { setNewNote } = useNoteContext();
   const { event, setEvent } = useSidebarContext();
+  const { settings } = useSettingsContext();
 
   async function getFolder() {
     const vaultPath = await store.get<{ value: String }>('notesVault');
@@ -100,13 +106,38 @@ export function SidebarFolder({
   const handleUnfocus = () => {
     setIsRenameOpen(false);
     setNewFolderName(folderName || '');
+    setIsNewMdOpen(false);
+    setNewMdName('');
+    setIsNewDirOpen(false);
+    setNewDir('');
   };
+
+  async function newMd(newFileName: string) {
+    const folderPath = path;
+
+    const newMd: Note = await invoke('new_md', { newFileName, folderPath });
+    console.log('New file: ', newMd);
+
+    setNewNote(newMd);
+    setIsNewMdOpen(false);
+    setNewMdName('');
+    setEvent(true);
+  }
+
+  async function newDir(newDirName: string) {
+    const parentDirPath = path;
+    console.log('new dir name: ', newDirName);
+    await invoke('new_dir', { newDirName, parentDirPath });
+    setIsNewDirOpen(false);
+    setNewDir('');
+    setEvent(true);
+  }
 
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [isrenameOpen]);
+  }, [isrenameOpen, isNewMdOpen, isNewDirOpen]);
 
   useEffect(() => {
     if (!path) {
@@ -142,6 +173,7 @@ export function SidebarFolder({
       </div>
     );
   }
+
   if (isrenameOpen && path) {
     return (
       <div className="w-full overflow-x-clip">
@@ -160,7 +192,7 @@ export function SidebarFolder({
               className="bg-transparent"
               ref={inputRef}
               type="text"
-              value={newFolderName}
+              value={NewDir}
               onChange={(e) => setNewFolderName(e.target.value)}
               onBlur={() => handleUnfocus()}
             />
@@ -186,6 +218,67 @@ export function SidebarFolder({
     );
   }
 
+  if ((isNewDirOpen || isNewMdOpen) && path) {
+    return (
+      <div className="w-full overflow-x-clip">
+        <div className="flex gap-1">
+          {isOpen ? (
+            <span className="opacity-45">v </span>
+          ) : (
+            <span className="opacity-45">&gt; </span>
+          )}
+          {folderName}
+        </div>
+        <ul className="ml-3">
+          {isNewDirOpen && (
+            <form
+              onSubmit={() => {
+                newDir(newFolderName);
+              }}
+            >
+              <input
+                className="bg-transparent"
+                ref={inputRef}
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewDir(e.target.value)}
+                onBlur={() => handleUnfocus()}
+              />
+            </form>
+          )}
+          {subFolders.map((subFolder, i) => {
+            return (
+              <SidebarFolder
+                key={subFolder.folderName + i.toString()}
+                path={subFolder.folderPath}
+                folderName={subFolder.folderName}
+              />
+            );
+          })}
+          {notes.map((note, i) => (
+            <li key={note.path + i.toString()}>{note.title}</li>
+          ))}
+          {isNewMdOpen && (
+            <form
+              onSubmit={() => {
+                newMd(newMdName);
+              }}
+            >
+              <input
+                className="bg-transparent"
+                ref={inputRef}
+                type="text"
+                value={newMdName}
+                onChange={(e) => setNewMdName(e.target.value)}
+                onBlur={() => handleUnfocus()}
+              />
+            </form>
+          )}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <ContextMenu>
       <div className="w-full overflow-x-clip">
@@ -201,10 +294,28 @@ export function SidebarFolder({
           <ContextMenuLabel>{folderName}</ContextMenuLabel>
           <ContextMenuSeparator />
           <ContextMenuItem onClick={() => setIsRenameOpen(true)}>
-            Rename
+            rename
           </ContextMenuItem>
           <ContextMenuItem onClick={() => handleDelete(path)}>
             delete
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={() => {
+              setIsNewDirOpen(true);
+              setIsOpen(true);
+              getFolder();
+            }}
+          >
+            new folder
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={() => {
+              setIsNewMdOpen(true);
+              setIsOpen(true);
+              getFolder();
+            }}
+          >
+            new md
           </ContextMenuItem>
         </ContextMenuContent>
         {isOpen && (
