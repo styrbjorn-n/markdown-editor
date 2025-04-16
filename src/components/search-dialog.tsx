@@ -14,8 +14,10 @@ import { Button } from './ui/button';
 import { useNoteContext } from '@/context/noteContext';
 import { useSettingsContext } from '@/context/settingsContext';
 import { tryCatch } from '@/lib/try-catch';
+import { LazyStore } from '@tauri-apps/plugin-store';
 
 export function SearchDialog() {
+  const [storeInstance] = useState(() => new LazyStore('settings.json'));
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchRes, setSearchRes] = useState<Note[]>();
@@ -28,10 +30,11 @@ export function SearchDialog() {
 
   async function getSearchRes(searchTerm: String) {
     const vaultPath = settings.notesVault;
+    const lastNotesOpend = settings.lastNotesOpend;
 
     if (searchTerm.length === 0) {
       const res = await Promise.allSettled(
-        settings.lastNotesOpend.map(async (filePath) => {
+        lastNotesOpend.map(async (filePath) => {
           const { data: readRes, error: readError } = await tryCatch(
             invoke('read_file', { filePath, withContentReturn: false })
           );
@@ -54,7 +57,22 @@ export function SearchDialog() {
             ).value
         );
 
-      setSearchRes(successfulResults.slice(0, 15));
+      setSearchRes(
+        successfulResults.slice(0, 15).filter((n) => n.title !== '')
+      );
+
+      const cleanLastNotesOpend = Array.from(
+        new Set([...lastNotesOpend.filter((n) => n !== '')])
+      ).slice(0, 50);
+
+      console.log(
+        'pre set uppdated lastNotesOpend',
+        lastNotesOpend.filter((n) => n !== '')
+      );
+
+      await storeInstance.set('lastNotesOpend', cleanLastNotesOpend);
+      await storeInstance.save();
+
       return;
     }
 
@@ -122,7 +140,7 @@ export function SearchDialog() {
           ))}
         </ol>
       </DialogContent>
-      <DialogFooter>{}</DialogFooter>
+      {/* <DialogFooter>{}</DialogFooter> */}
     </Dialog>
   );
 }
