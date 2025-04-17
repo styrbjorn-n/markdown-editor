@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const settingsSchema = z.object({
   notesVault: z.string(),
   lastNotesOpend: z.array(z.string()),
+  isFolderOpen: z.array(z.string()),
 });
 export type SettingsType = z.infer<typeof settingsSchema>;
 
@@ -17,7 +18,7 @@ export const parseSettings = (data: unknown) => {
 };
 
 export const SettingsContext = createContext<SettingsContextType>({
-  settings: { lastNotesOpend: [], notesVault: '' },
+  settings: { lastNotesOpend: [], notesVault: '', isFolderOpen: [] },
   setSettings: () => {},
 });
 

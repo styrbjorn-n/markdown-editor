@@ -27,6 +27,7 @@ export type Note = z.infer<typeof NoteSchema>;
 const defaultSettings: SettingsType = {
   notesVault: '',
   lastNotesOpend: [],
+  isFolderOpen: [],
 };
 
 function App() {
@@ -66,7 +67,6 @@ function App() {
 
     console.log('Updated history:', newHistory);
   }
-  
 
   async function readFile(filePath: string) {
     if (!filePath) {

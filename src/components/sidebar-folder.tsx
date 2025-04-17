@@ -35,9 +35,12 @@ export function SidebarFolder({
   type SubFolder = z.infer<typeof subFolderSchema>;
 
   const store = new LazyStore('settings.json');
+  const { settings, setSettings } = useSettingsContext();
   const [notes, setNotes] = useState<Note[]>([]);
   const [subFolders, setSubFolders] = useState<SubFolder[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(
+    checkOpened(path || '', settings.isFolderOpen)
+  );
   const [isLoaded, setIsLoaded] = useState(false);
   const [isrenameOpen, setIsRenameOpen] = useState(false);
   const [isNewDirOpen, setIsNewDirOpen] = useState(false);
@@ -48,7 +51,14 @@ export function SidebarFolder({
   const inputRef = useRef<HTMLInputElement>(null);
   const { setNewNote } = useNoteContext();
   const { event, setEvent } = useSidebarContext();
-  const { settings } = useSettingsContext();
+
+  function checkOpened(path: string, openedPathArray: string[]) {
+    if (openedPathArray.includes(path)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   async function getFolder() {
     const vaultPath = await store.get<{ value: String }>('notesVault');
@@ -86,6 +96,18 @@ export function SidebarFolder({
       setSubFolders([]);
     }
     setIsOpen((prev) => !prev);
+
+    if (path !== undefined && path !== '') {
+      const newIsFolderOpen = Array.from(
+        new Set([path, ...settings.isFolderOpen])
+      );
+      store.set('isFolderOpen', newIsFolderOpen);
+      store.save();
+      setSettings((prevSettings) => ({
+        ...prevSettings,
+        isFolderOpen: newIsFolderOpen,
+      }));
+    }
   };
 
   const handleDelete = async (folderPath: string) => {
@@ -132,6 +154,12 @@ export function SidebarFolder({
     setNewDir('');
     setEvent(true);
   }
+
+  useEffect(() => {
+    if (isOpen) {
+      getFolder();
+    }
+  }, []);
 
   useEffect(() => {
     if (inputRef.current) {
