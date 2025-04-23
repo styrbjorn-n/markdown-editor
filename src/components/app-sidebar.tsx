@@ -82,7 +82,12 @@ export function AppSidebar() {
             </Button>
           </div>
           {isNewDirOpen && (
-            <form onSubmit={() => newDir(newDirectoryName)}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                newDir(newDirectoryName);
+              }}
+            >
               <input
                 type="text"
                 ref={inputRef}
@@ -98,7 +103,12 @@ export function AppSidebar() {
           )}
           <SidebarFolder />
           {isNewFileOpen && (
-            <form onSubmit={() => newMd(newFileName)}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                newMd(newFileName);
+              }}
+            >
               <input
                 type="text"
                 ref={inputRef}

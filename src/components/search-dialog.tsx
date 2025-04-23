@@ -1,10 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { useEffect, useState } from 'react';
 import { useOpenSearch } from '@/hooks/use-open-search';
 import { Note, NoteSchema } from '@/App';

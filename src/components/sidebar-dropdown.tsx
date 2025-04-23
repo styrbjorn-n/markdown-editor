@@ -8,11 +8,9 @@ import {
 export function SidebarDropdown({
   isOpen,
   entityName,
-  isFolder = false,
 }: {
   isOpen: boolean;
   entityName: string;
-  isFolder?: boolean;
 }) {
   return (
     <DropdownMenu open={isOpen}>

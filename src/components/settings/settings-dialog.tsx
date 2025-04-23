@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTrigger,
 } from '../ui/dialog';
+import { ModeToggle } from '../mode-toggle';
 
 export default function SettingsDialog() {
   return (
@@ -28,7 +29,7 @@ export default function SettingsDialog() {
         </div>
         <div className="flex justify-between">
           <p>Dark mode</p>
-          <span>[toggle switch]</span>
+          <ModeToggle />
         </div>
       </DialogContent>
     </Dialog>

@@ -212,7 +212,7 @@ export function SidebarFolder({
             <span className="opacity-45">&gt; </span>
           )}
           <form
-            onSubmit={() => {
+            onSubmit={(e) => {e.preventDefault()
               handleRename(path, newFolderName);
             }}
           >
@@ -260,7 +260,7 @@ export function SidebarFolder({
         <ul className="ml-3">
           {isNewDirOpen && (
             <form
-              onSubmit={() => {
+            onSubmit={(e) => {e.preventDefault()
                 newDir(newFolderName);
               }}
             >
@@ -288,7 +288,7 @@ export function SidebarFolder({
           ))}
           {isNewMdOpen && (
             <form
-              onSubmit={() => {
+            onSubmit={(e) => {e.preventDefault()
                 newMd(newMdName);
               }}
             >
