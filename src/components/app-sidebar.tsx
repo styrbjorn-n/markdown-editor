@@ -1,16 +1,10 @@
-import { Sidebar, SidebarContent } from '@/components/ui/sidebar';
-import { invoke } from '@tauri-apps/api/core';
-import { Input } from './ui/input';
-import { useEffect, useRef, useState } from 'react';
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+} from '@/components/ui/sidebar';
+import { invoke } from '@tauri-apps/api/core';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { Note } from '@/App';
 import { useNoteContext } from '@/context/noteContext';
@@ -18,6 +12,7 @@ import { SidebarFolder } from './sidebar-folder';
 import { useSettingsContext } from '@/context/settingsContext';
 import { FilePlus, FolderPlus } from 'lucide-react';
 import { SidebarContext } from '@/context/sidebarContext';
+import SettingsDialog from './settings/settings-dialog';
 
 export function AppSidebar() {
   const [newFileName, setNewFileName] = useState('');
@@ -41,7 +36,8 @@ export function AppSidebar() {
     setEvent(true);
   }
 
-  async function newDir(newDirName: string, parentDirPath: string) {
+  async function newDir(newDirName: string) {
+    const parentDirPath = settings.notesVault;
     console.log('new dir name: ', newDirName);
     await invoke('new_dir', { newDirName, parentDirPath });
     setIsNewDirOpen(false);
@@ -86,7 +82,7 @@ export function AppSidebar() {
             </Button>
           </div>
           {isNewDirOpen && (
-            <form>
+            <form onSubmit={() => newDir(newDirectoryName)}>
               <input
                 type="text"
                 ref={inputRef}
@@ -102,7 +98,7 @@ export function AppSidebar() {
           )}
           <SidebarFolder />
           {isNewFileOpen && (
-            <form>
+            <form onSubmit={() => newMd(newFileName)}>
               <input
                 type="text"
                 ref={inputRef}
@@ -117,6 +113,14 @@ export function AppSidebar() {
             </form>
           )}
         </SidebarContent>
+        <SidebarFooter>
+          <p>
+            {settings.notesVault.slice(
+              settings.notesVault.lastIndexOf('/') + 1
+            )}
+          </p>
+          <SettingsDialog />
+        </SidebarFooter>
       </SidebarContext.Provider>
     </Sidebar>
   );

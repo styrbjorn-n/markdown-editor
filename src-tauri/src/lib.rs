@@ -36,6 +36,11 @@ fn new_md(new_file_name: &str, folder_path: String) -> Note {
     // creates a new markdown file and returns the new file as a Note to the frontend
 
     let new_file: String = folder_path.clone() + "/" + &new_file_name + ".md";
+    if Path::new(&new_file).exists() {
+        let existing_note = read_file(&new_file.as_str(), Some(true));
+        return existing_note;
+    }
+
     File::create(&new_file).expect("failed to create new note");
 
     let new_note = Note {
@@ -49,6 +54,9 @@ fn new_md(new_file_name: &str, folder_path: String) -> Note {
 #[tauri::command]
 fn new_dir(new_dir_name: &str, parent_dir_path: String) {
     let new_dir_path = format!("{}/{}", parent_dir_path, new_dir_name);
+    if Path::new(&new_dir_path).exists() {
+        return;
+    }
     fs::create_dir(new_dir_path).expect("Failed to create new dir");
 }
 
