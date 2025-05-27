@@ -6,8 +6,36 @@ import {
   DialogTrigger,
 } from '../ui/dialog';
 import { ModeToggle } from '../mode-toggle';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { useState } from 'react';
+import { useSettingsContext } from '@/context/settingsContext';
+import { LazyStore } from '@tauri-apps/plugin-store';
 
 export default function SettingsDialog() {
+  const [storeInstance] = useState(() => new LazyStore('settings.json'));
+  const { settings, setSettings } = useSettingsContext();
+  const [fontState, setFontState] = useState(settings.fontFace || '');
+
+  function handleFontChange(newFont: string) {
+    if (newFont === fontState) {
+      return;
+    }
+
+    setFontState(newFont);
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      fontFace: newFont,
+    }));
+    storeInstance.set('fontFace', newFont);
+    storeInstance.save();
+  }
+
   return (
     <Dialog>
       <DialogTrigger>
@@ -20,8 +48,16 @@ export default function SettingsDialog() {
           <span className="text-nowrap">[location goes here]</span>
         </div>
         <div className="flex justify-between">
-          <p>font</p>
-          <span>[font multiselect]</span>
+          <p>Font</p>
+          <Select onValueChange={handleFontChange} value={fontState}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Font" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="quicksand">Quicksand</SelectItem>
+              <SelectItem value="nunito">Nunito</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex justify-between">
           <p>zoom / font size</p>

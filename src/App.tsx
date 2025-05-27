@@ -15,6 +15,7 @@ import {
   SettingsContext,
   SettingsType,
 } from './context/settingsContext';
+import { FontContext, FontFaces } from './context/fontContext';
 
 export const NoteSchema = z.object({
   title: z.string(),
@@ -28,6 +29,7 @@ const defaultSettings: SettingsType = {
   notesVault: '',
   lastNotesOpend: [],
   isFolderOpen: [],
+  fontFace: 'quicksand',
 };
 
 function App() {
@@ -39,6 +41,7 @@ function App() {
   const [failedToRead, setFailedToRead] = useState(false);
   const isFirstRender = useRef(true);
   const [content, setContent] = useState('');
+  const [font, setFont] = useState<FontFaces>('quicksand');
   let debouncedContent = useDebounce(content);
 
   async function updateLastOpenedNotes(notePath: string) {
@@ -197,37 +200,39 @@ function App() {
 
   return (
     <SettingsContext.Provider value={{ settings, setSettings }}>
-      <NoteContext.Provider value={{ note, setNote, newNote, setNewNote }}>
-        <SidebarProvider>
-          <AppSidebar />
-          <main className="w-full">
-            <div className="relative h-full w-full shrink flex flex-col item">
-              <SidebarTrigger />
-              <SearchDialog />
-              <div className="w-full h-full flex justify-center">
-                <div
-                  className="w-full h-full max-w-[600px] relative mx-8
+      <FontContext.Provider value={{ font, setFont }}>
+        <NoteContext.Provider value={{ note, setNote, newNote, setNewNote }}>
+          <SidebarProvider>
+            <AppSidebar />
+            <main className="w-full">
+              <div className="relative h-full w-full shrink flex flex-col item">
+                <SidebarTrigger />
+                <SearchDialog />
+                <div className="w-full h-full flex justify-center">
+                  <div
+                    className="w-full h-full max-w-[600px] relative mx-8
                   mb-4 border-t"
-                >
-                  <p className="absolute top-[-1.5rem] font-thin left-0">
-                    {note?.title
-                      ? note.title.slice(note.title.lastIndexOf('/') + 1)
-                      : 'filename'}
-                  </p>
-                  <Textarea
-                    className="resize-none"
-                    ref={textAreaRef}
-                    value={content}
-                    onChange={(e) => {
-                      setContent(e.target.value);
-                    }}
-                  />
+                  >
+                    <p className="absolute top-[-1.5rem] font-thin left-0">
+                      {note?.title
+                        ? note.title.slice(note.title.lastIndexOf('/') + 1)
+                        : 'filename'}
+                    </p>
+                    <Textarea
+                      className="resize-none"
+                      ref={textAreaRef}
+                      value={content}
+                      onChange={(e) => {
+                        setContent(e.target.value);
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </main>
-        </SidebarProvider>
-      </NoteContext.Provider>
+            </main>
+          </SidebarProvider>
+        </NoteContext.Provider>
+      </FontContext.Provider>
     </SettingsContext.Provider>
   );
 }
