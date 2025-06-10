@@ -16,24 +16,30 @@ import {
 import { useState } from 'react';
 import { useSettingsContext } from '@/context/settingsContext';
 import { LazyStore } from '@tauri-apps/plugin-store';
+import { FontFaces, useFontContext } from '@/context/fontContext';
 
 export default function SettingsDialog() {
   const [storeInstance] = useState(() => new LazyStore('settings.json'));
   const { settings, setSettings } = useSettingsContext();
   const [fontState, setFontState] = useState(settings.fontFace || '');
+  const { setFont } = useFontContext();
 
   function handleFontChange(newFont: string) {
     if (newFont === fontState) {
       return;
     }
 
-    setFontState(newFont);
-    setSettings((prevSettings) => ({
-      ...prevSettings,
-      fontFace: newFont,
-    }));
-    storeInstance.set('fontFace', newFont);
-    storeInstance.save();
+    const fontFacesSet = new Set<FontFaces>(['nunito', 'quicksand']);
+    if (fontFacesSet.has(newFont as FontFaces)) {
+      setFontState(newFont);
+      setSettings((prevSettings) => ({
+        ...prevSettings,
+        fontFace: newFont,
+      }));
+      storeInstance.set('fontFace', newFont);
+      storeInstance.save();
+      setFont(newFont as FontFaces);
+    }
   }
 
   return (

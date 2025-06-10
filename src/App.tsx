@@ -15,7 +15,7 @@ import {
   SettingsContext,
   SettingsType,
 } from './context/settingsContext';
-import { FontContext, FontFaces } from './context/fontContext';
+import { fontClassMap, FontContext, FontFaces } from './context/fontContext';
 
 export const NoteSchema = z.object({
   title: z.string(),
@@ -202,15 +202,15 @@ function App() {
     <SettingsContext.Provider value={{ settings, setSettings }}>
       <FontContext.Provider value={{ font, setFont }}>
         <NoteContext.Provider value={{ note, setNote, newNote, setNewNote }}>
-          <SidebarProvider>
-            <AppSidebar />
-            <main className="w-full">
-              <div className="relative h-full w-full shrink flex flex-col item">
+          <main className={`w-full  ${fontClassMap[font]}`}>
+            <SidebarProvider>
+              <AppSidebar />
+              <div className="relative w-full flex flex-col item">
                 <SidebarTrigger />
                 <SearchDialog />
-                <div className="w-full h-full flex justify-center">
+                <div className="w-full flex justify-center">
                   <div
-                    className="w-full h-full max-w-[600px] relative mx-8
+                    className="w-full max-w-[600px] relative mx-8
                   mb-4 border-t"
                   >
                     <p className="absolute top-[-1.5rem] font-thin left-0">
@@ -219,7 +219,7 @@ function App() {
                         : 'filename'}
                     </p>
                     <Textarea
-                      className="resize-none"
+                      className="resize-none h-[calc(100vh-50px)]"
                       ref={textAreaRef}
                       value={content}
                       onChange={(e) => {
@@ -229,8 +229,8 @@ function App() {
                   </div>
                 </div>
               </div>
-            </main>
-          </SidebarProvider>
+            </SidebarProvider>
+          </main>
         </NoteContext.Provider>
       </FontContext.Provider>
     </SettingsContext.Provider>
