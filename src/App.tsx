@@ -198,28 +198,45 @@ function App() {
     }
   }, [newNote]);
 
+  // this is one way of doing it i guess, going to have seperate objects for each ui element
+  const zoomLevel = '1.5';
+
   return (
     <SettingsContext.Provider value={{ settings, setSettings }}>
       <FontContext.Provider value={{ font, setFont }}>
         <NoteContext.Provider value={{ note, setNote, newNote, setNewNote }}>
-          <main className={`w-full  ${fontClassMap[font]}`}>
+          <main className={`w-full relative ${fontClassMap[font]}`}>
+            {/* <div className="absolute bottom-0 z-50 left-1/2 border border-e-red-600 h-screen"></div> */}
             <SidebarProvider>
               <AppSidebar />
-              <div className="relative w-full flex flex-col item">
+              <div className="w-full flex item overflow-y-hidden">
                 <SidebarTrigger />
                 <SearchDialog />
-                <div className="w-full flex justify-center">
+                {/* this margin prolly need to scale along with the rest of em */}
+                <div
+                  className="w-full flex justify-center mt-6"
+                  style={{ marginTop: `calc(1.5rem * ${zoomLevel})` }}
+                >
                   <div
-                    className="w-full max-w-[600px] relative mx-8
-                  mb-4 border-t"
+                    className="w-full max-w-[600px] relative mx-8 border-t"
+                    // so i guess i need to fuck with the scaling here instead of with tailwind ffs
+                    // i also need to deal with the fact it overflows BAD in small windows
+                    // the P tag also disapears, guess its to do with the top-[-1.5rem]
+
+                    style={{ zoom: zoomLevel }}
                   >
-                    <p className="absolute top-[-1.5rem] font-thin left-0">
+                    {/* the rem of the p tag needs to scale along with the elements */}
+                    <p
+                      className="absolute z-50 font-thin left-0 ml-2"
+                      style={{ top: `calc(-1.5rem * ${zoomLevel})` }}
+                    >
                       {note?.title
                         ? note.title.slice(note.title.lastIndexOf('/') + 1)
                         : 'filename'}
                     </p>
                     <Textarea
-                      className="resize-none h-[calc(100vh-50px)]"
+                      className="resize-none h-[calc(100vh-50px)] text-base"
+                      style={{ lineHeight: `calc(1.5rem * ${zoomLevel})` }}
                       ref={textAreaRef}
                       value={content}
                       onChange={(e) => {
